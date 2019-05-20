@@ -1,14 +1,7 @@
 aBcd
 ====
 
-[![Build Status](https://travis-ci.org/aBitcoinDiamond.png?branch=master)](https://travis-ci.org/aBitcoinDiamond)
-[![ISC License](http://img.shields.io/badge/license-ISC-blue.svg)](http://copyfree.org)
-[![GoDoc](https://img.shields.io/badge/godoc-reference-blue.svg)](http://godoc.org/github.com/aBitcoinDiamond)
-
 aBcd (advanced bitcoin diamond) is an alternative full node bitcoin diamond implementation written in Go (golang).
-
-
-https://www.bitcoindiamond.org
 
 Bitcoin Diamond (BCD) is a fork of Bitcoin that occurs at the predetermined height of block 495866 
 and therewith a new chain will be generated as the BCD. Bitcoin Diamond miners will begin creating 
