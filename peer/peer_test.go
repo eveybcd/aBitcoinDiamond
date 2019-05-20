@@ -13,10 +13,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/peer"
-	"github.com/btcsuite/btcd/wire"
+	"github.com/aBitcoinDiamond/chaincfg"
+	"github.com/aBitcoinDiamond/chaincfg/chainhash"
+	"github.com/aBitcoinDiamond/peer"
+	"github.com/aBitcoinDiamond/wire"
 	"github.com/btcsuite/go-socks/socks"
 )
 

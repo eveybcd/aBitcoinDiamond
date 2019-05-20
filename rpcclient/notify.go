@@ -13,9 +13,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/btcsuite/btcd/btcjson"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/wire"
+	"github.com/aBitcoinDiamond/btcjson"
+	"github.com/aBitcoinDiamond/chaincfg/chainhash"
+	"github.com/aBitcoinDiamond/wire"
 	"github.com/btcsuite/btcutil"
 )
 

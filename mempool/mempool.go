@@ -12,14 +12,14 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/btcsuite/btcd/blockchain"
-	"github.com/btcsuite/btcd/blockchain/indexers"
-	"github.com/btcsuite/btcd/btcjson"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/mining"
-	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcd/wire"
+	"github.com/aBitcoinDiamond/blockchain"
+	"github.com/aBitcoinDiamond/blockchain/indexers"
+	"github.com/aBitcoinDiamond/btcjson"
+	"github.com/aBitcoinDiamond/chaincfg"
+	"github.com/aBitcoinDiamond/chaincfg/chainhash"
+	"github.com/aBitcoinDiamond/mining"
+	"github.com/aBitcoinDiamond/txscript"
+	"github.com/aBitcoinDiamond/wire"
 	"github.com/btcsuite/btcutil"
 )
 

@@ -12,13 +12,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/btcsuite/btcd/blockchain"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/database"
-	"github.com/btcsuite/btcd/mempool"
-	peerpkg "github.com/btcsuite/btcd/peer"
-	"github.com/btcsuite/btcd/wire"
+	"github.com/aBitcoinDiamond/blockchain"
+	"github.com/aBitcoinDiamond/chaincfg"
+	"github.com/aBitcoinDiamond/chaincfg/chainhash"
+	"github.com/aBitcoinDiamond/database"
+	"github.com/aBitcoinDiamond/mempool"
+	peerpkg "github.com/aBitcoinDiamond/peer"
+	"github.com/aBitcoinDiamond/wire"
 	"github.com/btcsuite/btcutil"
 )
 

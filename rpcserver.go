@@ -27,19 +27,19 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/btcsuite/btcd/blockchain"
-	"github.com/btcsuite/btcd/blockchain/indexers"
-	"github.com/btcsuite/btcd/btcec"
-	"github.com/btcsuite/btcd/btcjson"
-	"github.com/btcsuite/btcd/chaincfg"
-	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/database"
-	"github.com/btcsuite/btcd/mempool"
-	"github.com/btcsuite/btcd/mining"
-	"github.com/btcsuite/btcd/mining/cpuminer"
-	"github.com/btcsuite/btcd/peer"
-	"github.com/btcsuite/btcd/txscript"
-	"github.com/btcsuite/btcd/wire"
+	"github.com/aBitcoinDiamond/blockchain"
+	"github.com/aBitcoinDiamond/blockchain/indexers"
+	"github.com/aBitcoinDiamond/btcec"
+	"github.com/aBitcoinDiamond/btcjson"
+	"github.com/aBitcoinDiamond/chaincfg"
+	"github.com/aBitcoinDiamond/chaincfg/chainhash"
+	"github.com/aBitcoinDiamond/database"
+	"github.com/aBitcoinDiamond/mempool"
+	"github.com/aBitcoinDiamond/mining"
+	"github.com/aBitcoinDiamond/mining/cpuminer"
+	"github.com/aBitcoinDiamond/peer"
+	"github.com/aBitcoinDiamond/txscript"
+	"github.com/aBitcoinDiamond/wire"
 	"github.com/btcsuite/btcutil"
 	"github.com/btcsuite/websocket"
 )
@@ -4281,7 +4281,7 @@ func newRPCServer(config *rpcserverConfig) (*rpcServer, error) {
 		gbtWorkState:           newGbtWorkState(config.TimeSource),
 		helpCacher:             newHelpCacher(),
 		requestProcessShutdown: make(chan struct{}),
-		quit: make(chan int),
+		quit:                   make(chan int),
 	}
 	if cfg.RPCUser != "" && cfg.RPCPass != "" {
 		login := cfg.RPCUser + ":" + cfg.RPCPass

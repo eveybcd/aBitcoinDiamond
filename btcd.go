@@ -15,9 +15,9 @@ import (
 	"runtime/debug"
 	"runtime/pprof"
 
-	"github.com/btcsuite/btcd/blockchain/indexers"
-	"github.com/btcsuite/btcd/database"
-	"github.com/btcsuite/btcd/limits"
+	"github.com/aBitcoinDiamond/blockchain/indexers"
+	"github.com/aBitcoinDiamond/database"
+	"github.com/aBitcoinDiamond/limits"
 )
 
 const (

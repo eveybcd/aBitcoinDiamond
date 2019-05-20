@@ -2,7 +2,7 @@
 
 CLI := build/aBcd-cli
 SRC_CLI := github.com/aBitcoinDiamond/cmd/btcctl
-APP := build/aBcdd
+APP := build/aBcd
 
 
 build:
