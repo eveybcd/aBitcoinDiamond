@@ -219,6 +219,21 @@ type Params struct {
 	// BIP44 coin type used in the hierarchical deterministic path for
 	// address generation.
 	HDCoinType uint32
+
+	// BCDHeight defines the block height at which bcd was forked.
+	BCDHeight int32
+
+	// BCDGenesisBlockReward defines the reward of block height at which bcd
+	// was forked.
+	BCDGenesisBlockReward int64
+
+	// BCDPowLimit defines the highest allowed proof of work value for a
+	// block of bcd as a uint256.
+	BCDPowLimit *big.Int
+
+	// BCDPowLimitBits defines the highest allowed proof of work value for a
+	// block of bcd in compact form.
+	BCDPowLimitBits uint32
 }
 
 // MainNetParams defines the network parameters for the main Bitcoin network.
