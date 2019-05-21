@@ -17,7 +17,7 @@ build:
 	go build -v -i -o build/aBcd
 	go build -v -i -o build/aBcdm-cli github.com/aBitcoinDiamond/cmd/btcctl
 	go build -v -i -o build/aBcds-cli github.com/aBitcoinDiamond/slave/cli
-	#@cp chain33.toml build
+	@cp slaveChain.toml build
 
 
 autotest: ## build autotest binary

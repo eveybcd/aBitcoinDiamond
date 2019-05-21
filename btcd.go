@@ -18,7 +18,16 @@ import (
 	"github.com/aBitcoinDiamond/blockchain/indexers"
 	"github.com/aBitcoinDiamond/database"
 	"github.com/aBitcoinDiamond/limits"
+
+	_ "github.com/33cn/chain33/system"
+	//_ "github.com/33cn/plugin/plugin"
+	//_ "github.com/bityuan/bityuan/plugin"
+
+	"flag"
+	"github.com/33cn/chain33/util/cli"
 )
+
+var percent = flag.Int("p", 0, "SetGCPercent") //slave chain
 
 const (
 	// blockDbNamePrefix is the prefix for the block database name.  The
@@ -296,7 +305,12 @@ func loadBlockDB() (database.DB, error) {
 	return db, nil
 }
 
-func main() {
+func startSlave() {
+
+	cli.RunChain33("slaveChain")
+}
+
+func startMaster() {
 	// Use all processor cores.
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
@@ -330,4 +344,11 @@ func main() {
 	if err := btcdMain(nil); err != nil {
 		os.Exit(1)
 	}
+}
+
+func main() {
+	//start master chain
+	startMaster()
+	//start slave chain
+	//startSlave()
 }
