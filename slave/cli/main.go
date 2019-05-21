@@ -9,7 +9,7 @@ package main
 import (
 	_ "github.com/33cn/chain33/system"
 	"github.com/aBitcoinDiamond/slave/cli/buildflags"
-	//_ "github.com/33cn/plugin/plugin"
+	//_ "github.com/aBitcoinDiamond/slave"
 
 	"github.com/33cn/chain33/util/cli"
 )
