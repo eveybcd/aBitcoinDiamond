@@ -20,8 +20,9 @@ import (
 	"github.com/aBitcoinDiamond/limits"
 
 	_ "github.com/33cn/chain33/system"
-	//_ "github.com/33cn/plugin/plugin"
+	//_ "github.com/aBitcoinDiamond/slave"
 	//_ "github.com/bityuan/bityuan/plugin"
+	_ "github.com/aBitcoinDiamond/slave/consensus/ticket"
 
 	"flag"
 	"github.com/33cn/chain33/util/cli"
@@ -348,7 +349,7 @@ func startMaster() {
 
 func main() {
 	//start master chain
-	startMaster()
+	//startMaster()
 	//start slave chain
-	//startSlave()
+	startSlave()
 }
