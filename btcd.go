@@ -18,8 +18,6 @@ import (
 	"github.com/aBitcoinDiamond/blockchain/indexers"
 	"github.com/aBitcoinDiamond/database"
 	"github.com/aBitcoinDiamond/limits"
-
-	"github.com/aBitcoinDiamond/slave"
 )
 
 const (
@@ -336,7 +334,7 @@ func startMaster() {
 
 func main() {
 	//start master chain
-	//startMaster()
+	startMaster()
 	//start slave chain
-	slave.StartSlave()
+	//slave.StartSlave()
 }
