@@ -58,6 +58,7 @@ message ReWriteRawTx {
     string to     = 3;
     string expire = 4;
     int64  fee    = 5;
+    int32  index  = 6;
 }
 
 message CreateTransactionGroup {
@@ -74,13 +75,6 @@ message NoBalanceTx {
     string payAddr = 2;
     string privkey = 3;
     string expire  = 4;
-}
-
-message SignedTx {
-    bytes unsign = 1;
-    bytes sign   = 2;
-    bytes pubkey = 3;
-    int32 ty     = 4;
 }
 
 message Transaction {
@@ -171,6 +165,10 @@ message ReplyTxList {
     repeated Transaction txs = 1;
 }
 
+message ReplyProperFee {
+    int64 properFee = 1;
+}
+
 message TxHashList {
     repeated bytes hashes = 1;
     int64          count  = 2;
@@ -240,7 +238,7 @@ message UserWrite {
 }
 
 message UpgradeMeta {
-    bool   indexing = 1;
+    bool   starting = 1;
     string version  = 2;
     int64  height   = 3;
 }

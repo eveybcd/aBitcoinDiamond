@@ -11,18 +11,22 @@ import (
 	"github.com/33cn/chain33/account"
 	"github.com/33cn/chain33/common/crypto"
 	"github.com/33cn/chain33/queue"
-	_ "github.com/33cn/chain33/system"
 	"github.com/33cn/chain33/types"
 	"github.com/33cn/chain33/util"
 	"github.com/33cn/chain33/util/testnode"
-	_ "github.com/aBitcoinDiamond/slave/dapp/init"
 	ty "github.com/aBitcoinDiamond/slave/dapp/ticket/types"
-	_ "github.com/aBitcoinDiamond/slave/store/init"
 	"github.com/stretchr/testify/assert"
+
+	_ "github.com/33cn/chain33/system"
+	_ "github.com/aBitcoinDiamond/slave/dapp/init"
+	_ "github.com/aBitcoinDiamond/slave/store/init"
 )
 
-// 执行： go test -cover
 func TestTicket(t *testing.T) {
+	testTicket(t)
+}
+
+func testTicket(t *testing.T) {
 	mock33 := testnode.New("testdata/chain33.cfg.toml", nil)
 	defer mock33.Close()
 	mock33.Listen()
@@ -61,7 +65,7 @@ func TestTicket(t *testing.T) {
 	status, err = mock33.GetAPI().GetWalletStatus()
 	assert.Nil(t, err)
 	assert.Equal(t, true, status.IsAutoMining)
-	err = mock33.WaitHeight(100)
+	err = mock33.WaitHeight(50)
 	assert.Nil(t, err)
 	//查询票是否自动close，并且购买了新的票
 	req := &types.ReqWalletTransactionList{Count: 1000}
@@ -127,13 +131,14 @@ func TestTicketMap(t *testing.T) {
 
 	c.setTicket(nil, nil)
 	assert.Equal(t, c.getTicketCount(), int64(0))
+	_, err := c.Query_GetTicketCount(&types.ReqNil{})
+	assert.Nil(t, err)
 }
 
 func TestProcEvent(t *testing.T) {
 	c := Client{}
-	ret := c.ProcEvent(queue.Message{})
+	ret := c.ProcEvent(&queue.Message{})
 	assert.Equal(t, ret, true)
-
 }
 
 func Test_genPrivHash(t *testing.T) {

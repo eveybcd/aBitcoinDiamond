@@ -23,13 +23,13 @@ import (
 
 // EventInterface p2p subscribe to the event hander interface
 type EventInterface interface {
-	BroadCastTx(msg queue.Message, taskindex int64)
-	GetMemPool(msg queue.Message, taskindex int64)
-	GetPeerInfo(msg queue.Message, taskindex int64)
-	GetHeaders(msg queue.Message, taskindex int64)
-	GetBlocks(msg queue.Message, taskindex int64)
-	BlockBroadcast(msg queue.Message, taskindex int64)
-	GetNetInfo(msg queue.Message, taskindex int64)
+	BroadCastTx(msg *queue.Message, taskindex int64)
+	GetMemPool(msg *queue.Message, taskindex int64)
+	GetPeerInfo(msg *queue.Message, taskindex int64)
+	GetHeaders(msg *queue.Message, taskindex int64)
+	GetBlocks(msg *queue.Message, taskindex int64)
+	BlockBroadcast(msg *queue.Message, taskindex int64)
+	GetNetInfo(msg *queue.Message, taskindex int64)
 }
 
 // NormalInterface subscribe to the event hander interface
@@ -67,7 +67,7 @@ func NewNormalP2PCli() NormalInterface {
 }
 
 // BroadCastTx broadcast transactions
-func (m *Cli) BroadCastTx(msg queue.Message, taskindex int64) {
+func (m *Cli) BroadCastTx(msg *queue.Message, taskindex int64) {
 	defer func() {
 		<-m.network.txFactory
 		atomic.AddInt32(&m.network.txCapcity, 1)
@@ -78,7 +78,7 @@ func (m *Cli) BroadCastTx(msg queue.Message, taskindex int64) {
 }
 
 // GetMemPool get mempool contents
-func (m *Cli) GetMemPool(msg queue.Message, taskindex int64) {
+func (m *Cli) GetMemPool(msg *queue.Message, taskindex int64) {
 	defer func() {
 		<-m.network.otherFactory
 		log.Debug("GetMemPool", "task complete:", taskindex)
@@ -131,14 +131,20 @@ func (m *Cli) GetMemPool(msg queue.Message, taskindex int64) {
 		invdatas, recerr := datacli.Recv()
 		if recerr != nil && recerr != io.EOF {
 			log.Error("GetMemPool", "err", recerr.Error())
-			datacli.CloseSend()
+			err = datacli.CloseSend()
+			if err != nil {
+				log.Error("datacli", "close err", err)
+			}
 			continue
 		}
 
 		for _, invdata := range invdatas.Items {
 			Txs = append(Txs, invdata.GetTx())
 		}
-		datacli.CloseSend()
+		err = datacli.CloseSend()
+		if err != nil {
+			log.Error("datacli", "CloseSend err", err)
+		}
 		break
 	}
 	msg.Reply(m.network.client.NewMessage("mempool", pb.EventReplyTxList, &pb.ReplyTxList{Txs: Txs}))
@@ -198,8 +204,7 @@ func (m *Cli) GetAddrList(peer *Peer) (map[string]int64, error) {
 		log.Error("getLocalPeerInfo blockchain", "Error", err.Error())
 		return addrlist, err
 	}
-	var respmsg queue.Message
-	respmsg, err = client.WaitTimeout(msg, time.Second*30)
+	respmsg, err := client.WaitTimeout(msg, time.Second*30)
 	if err != nil {
 		return addrlist, err
 	}
@@ -318,7 +323,7 @@ func (m *Cli) GetBlockHeight(nodeinfo *NodeInfo) (int64, error) {
 }
 
 // GetPeerInfo return peer information
-func (m *Cli) GetPeerInfo(msg queue.Message, taskindex int64) {
+func (m *Cli) GetPeerInfo(msg *queue.Message, taskindex int64) {
 	defer func() {
 		log.Debug("GetPeerInfo", "task complete:", taskindex)
 	}()
@@ -343,7 +348,7 @@ func (m *Cli) GetPeerInfo(msg queue.Message, taskindex int64) {
 }
 
 // GetHeaders get headers information
-func (m *Cli) GetHeaders(msg queue.Message, taskindex int64) {
+func (m *Cli) GetHeaders(msg *queue.Message, taskindex int64) {
 	defer func() {
 		<-m.network.otherFactory
 		log.Debug("GetHeaders", "task complete:", taskindex)
@@ -381,14 +386,17 @@ func (m *Cli) GetHeaders(msg queue.Message, taskindex int64) {
 
 				client := m.network.node.nodeInfo.client
 				msg := client.NewMessage("blockchain", pb.EventAddBlockHeaders, &pb.HeadersPid{Pid: pid[0], Headers: &pb.Headers{Items: headers.GetHeaders()}})
-				client.Send(msg, false)
+				err = client.Send(msg, false)
+				if err != nil {
+					log.Error("send", "to blockchain EventAddBlockHeaders msg Err", err.Error())
+				}
 			}
 		}
 	}
 }
 
 // GetBlocks get blocks information
-func (m *Cli) GetBlocks(msg queue.Message, taskindex int64) {
+func (m *Cli) GetBlocks(msg *queue.Message, taskindex int64) {
 	defer func() {
 		<-m.network.otherFactory
 		log.Debug("GetBlocks", "task complete:", taskindex)
@@ -399,12 +407,20 @@ func (m *Cli) GetBlocks(msg queue.Message, taskindex int64) {
 		msg.Reply(m.network.client.NewMessage("blockchain", pb.EventReply, pb.Reply{Msg: []byte("no peers")}))
 		return
 	}
-	msg.Reply(m.network.client.NewMessage("blockchain", pb.EventReply, pb.Reply{IsOk: true, Msg: []byte("downloading...")}))
 
 	req := msg.GetData().(*pb.ReqBlocks)
 	log.Info("GetBlocks", "start", req.GetStart(), "end", req.GetEnd())
 	pids := req.GetPid()
-	var MaxInvs = new(pb.P2PInv)
+	var Inventorys = make([]*pb.Inventory, 0)
+	for i := req.GetStart(); i <= req.GetEnd(); i++ {
+		var inv pb.Inventory
+		inv.Ty = msgBlock
+		inv.Height = i
+		Inventorys = append(Inventorys, &inv)
+	}
+
+	MaxInvs := &pb.P2PInv{Invs: Inventorys}
+
 	var downloadPeers []*Peer
 	peers, infos := m.network.node.GetActivePeers()
 	if len(pids) > 0 && pids[0] != "" { //指定Pid 下载数据
@@ -419,21 +435,6 @@ func (m *Cli) GetBlocks(msg queue.Message, taskindex int64) {
 				peer, ok := peers[paddr]
 				if ok && peer != nil {
 					downloadPeers = append(downloadPeers, peer)
-					//获取Invs
-					if len(MaxInvs.GetInvs()) != int(req.GetEnd()-req.GetStart())+1 {
-						var err error
-						MaxInvs, err = peer.mconn.gcli.GetBlocks(context.Background(), &pb.P2PGetBlocks{StartHeight: req.GetStart(), EndHeight: req.GetEnd(),
-							Version: m.network.node.nodeInfo.cfg.Version}, grpc.FailFast(true))
-						P2pComm.CollectPeerStat(err, peer)
-						if err != nil {
-							log.Error("GetBlocks", "Err", err.Error())
-							if err == pb.ErrVersion {
-								peer.version.SetSupport(false)
-								P2pComm.CollectPeerStat(err, peer)
-							}
-							continue
-						}
-					}
 
 				}
 			}
@@ -441,45 +442,6 @@ func (m *Cli) GetBlocks(msg queue.Message, taskindex int64) {
 
 	} else {
 		log.Info("fetch from all peers in pids")
-
-		for _, peer := range peers { //限制对peer 的高频次调用
-			log.Info("peer", "addr", peer.Addr(), "start", req.GetStart(), "end", req.GetEnd())
-			peerinfo, ok := infos[peer.Addr()]
-			if !ok {
-				continue
-			}
-			var pr pb.Peer
-			pr.Addr = peerinfo.GetAddr()
-			pr.Port = peerinfo.GetPort()
-			pr.Name = peerinfo.GetName()
-			pr.MempoolSize = peerinfo.GetMempoolSize()
-			pr.Header = peerinfo.GetHeader()
-
-			if peerinfo.GetHeader().GetHeight() < req.GetEnd() {
-				continue
-			}
-
-			invs, err := peer.mconn.gcli.GetBlocks(context.Background(), &pb.P2PGetBlocks{StartHeight: req.GetStart(), EndHeight: req.GetEnd(),
-				Version: m.network.node.nodeInfo.cfg.Version}, grpc.FailFast(true))
-			P2pComm.CollectPeerStat(err, peer)
-			if err != nil {
-				log.Error("GetBlocks", "Err", err.Error())
-				if err == pb.ErrVersion {
-					peer.version.SetSupport(false)
-					P2pComm.CollectPeerStat(err, peer)
-				}
-				continue
-			}
-
-			if len(invs.Invs) > len(MaxInvs.Invs) {
-				MaxInvs = invs
-				if len(MaxInvs.GetInvs()) == int(req.GetEnd()-req.GetStart())+1 {
-					break
-				}
-			}
-
-		}
-
 		for _, peer := range peers {
 			peerinfo, ok := infos[peer.Addr()]
 			if !ok {
@@ -493,18 +455,19 @@ func (m *Cli) GetBlocks(msg queue.Message, taskindex int64) {
 		}
 	}
 
-	log.Debug("Invs", "Invs show", MaxInvs.GetInvs())
-	if len(MaxInvs.GetInvs()) == 0 {
-		log.Error("GetBlocks", "getInvs", 0)
+	if len(downloadPeers) == 0 {
+		log.Error("GetBlocks", "downloadPeers", 0)
+		msg.Reply(m.network.client.NewMessage("blockchain", pb.EventReply, pb.Reply{Msg: []byte("no downloadPeers")}))
 		return
 	}
 
+	msg.Reply(m.network.client.NewMessage("blockchain", pb.EventReply, pb.Reply{IsOk: true, Msg: []byte("downloading...")}))
+
 	//使用新的下载模式进行下载
-	var bChan = make(chan *pb.BlockPid, 256)
+	var bChan = make(chan *pb.BlockPid, 512)
 	invs := MaxInvs.GetInvs()
 	job := NewDownloadJob(m, downloadPeers)
 	var jobcancel int32
-	var maxDownloadRetryCount = 100
 	go func(cancel *int32, invs []*pb.Inventory) {
 		for {
 			if atomic.LoadInt32(cancel) == 1 {
@@ -515,15 +478,25 @@ func (m *Cli) GetBlocks(msg queue.Message, taskindex int64) {
 			if len(invs) == 0 {
 				return
 			}
-			maxDownloadRetryCount--
-			if maxDownloadRetryCount < 0 {
+
+			if job.avalidPeersNum() <= 0 {
+				job.ResetDownloadPeers(downloadPeers)
+				continue
+			}
+
+			if job.isCancel() {
 				return
 			}
+
 		}
 	}(&jobcancel, invs)
+
 	i := 0
 	for {
-		timeout := time.NewTimer(time.Minute)
+		if job.isCancel() {
+			return
+		}
+		timeout := time.NewTimer(time.Minute * 10)
 		select {
 		case <-timeout.C:
 			atomic.StoreInt32(&jobcancel, 1)
@@ -532,7 +505,10 @@ func (m *Cli) GetBlocks(msg queue.Message, taskindex int64) {
 			return
 		case blockpid := <-bChan:
 			newmsg := m.network.node.nodeInfo.client.NewMessage("blockchain", pb.EventSyncBlock, blockpid)
-			m.network.node.nodeInfo.client.SendTimeout(newmsg, false, 60*time.Second)
+			err := m.network.node.nodeInfo.client.SendTimeout(newmsg, false, 60*time.Second)
+			if err != nil {
+				log.Error("send", "to blockchain EventSyncBlock msg err", err)
+			}
 			i++
 			if i == len(MaxInvs.GetInvs()) {
 				return
@@ -546,7 +522,7 @@ func (m *Cli) GetBlocks(msg queue.Message, taskindex int64) {
 }
 
 // BlockBroadcast block broadcast
-func (m *Cli) BlockBroadcast(msg queue.Message, taskindex int64) {
+func (m *Cli) BlockBroadcast(msg *queue.Message, taskindex int64) {
 	defer func() {
 		<-m.network.otherFactory
 		log.Debug("BlockBroadcast", "task complete:", taskindex)
@@ -555,7 +531,7 @@ func (m *Cli) BlockBroadcast(msg queue.Message, taskindex int64) {
 }
 
 // GetNetInfo get network information
-func (m *Cli) GetNetInfo(msg queue.Message, taskindex int64) {
+func (m *Cli) GetNetInfo(msg *queue.Message, taskindex int64) {
 	defer func() {
 		<-m.network.otherFactory
 		log.Debug("GetNetInfo", "task complete:", taskindex)
@@ -653,7 +629,7 @@ func (m *Cli) getLocalPeerInfo() (*pb.P2PPeerInfo, error) {
 	localpeerinfo.MempoolSize = int32(meminfo.GetSize())
 	if m.network.node.nodeInfo.GetExternalAddr().IP == nil {
 		localpeerinfo.Addr = LocalAddr
-		localpeerinfo.Port = int32(defaultPort)
+		localpeerinfo.Port = int32(m.network.node.listenPort)
 	} else {
 		localpeerinfo.Addr = m.network.node.nodeInfo.GetExternalAddr().IP.String()
 		localpeerinfo.Port = int32(m.network.node.nodeInfo.GetExternalAddr().Port)

@@ -5,6 +5,7 @@
 package ticket
 
 import (
+	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
@@ -160,7 +161,7 @@ func (client *Client) Query_FlushTicket(req *types.ReqNil) (types.Message, error
 }
 
 // ProcEvent ticket reply not support action err
-func (client *Client) ProcEvent(msg queue.Message) bool {
+func (client *Client) ProcEvent(msg *queue.Message) bool {
 	msg.ReplyErr("Client", types.ErrActionNotSupport)
 	return true
 }
@@ -485,6 +486,9 @@ func (client *Client) searchTargetTicket(parent, block *types.Block) (*ty.Ticket
 	client.ticketmu.Lock()
 	defer client.ticketmu.Unlock()
 	for ticketID, ticket := range client.ticketsMap {
+		if client.IsClosed() {
+			return nil, nil, nil, nil, "", nil
+		}
 		if ticket == nil {
 			tlog.Warn("Client searchTargetTicket ticket is nil", "ticketID", ticketID)
 			continue
@@ -527,7 +531,7 @@ func (client *Client) delTicket(ticketID string) {
 }
 
 // Miner ticket miner function
-func (client *Client) Miner(parent, block *types.Block) bool {
+func (client *Client) Miner(parent, block *types.Block) error {
 	//add miner address
 	ticket, priv, diff, modify, ticketID, err := client.searchTargetTicket(parent, block)
 	if err != nil {
@@ -537,21 +541,21 @@ func (client *Client) Miner(parent, block *types.Block) bool {
 			tlog.Error("Miner.RequestLastBlock", "err", err)
 		}
 		client.SetCurrentBlock(newblock)
-		return false
+		return err
 	}
 	if ticket == nil {
-		return false
+		return errors.New("ticket is nil")
 	}
 	err = client.addMinerTx(parent, block, diff, priv, ticket.TicketId, modify)
 	if err != nil {
-		return false
+		return err
 	}
 	err = client.WriteBlock(parent.StateHash, block)
 	if err != nil {
-		return false
+		return err
 	}
 	client.delTicket(ticketID)
-	return true
+	return nil
 }
 
 //gas 直接燃烧
@@ -636,8 +640,9 @@ func (client *Client) createBlock() (*types.Block, *types.Block) {
 	return &newblock, lastBlock
 }
 
-func (client *Client) updateBlock(newblock *types.Block, txHashList [][]byte) (*types.Block, [][]byte) {
+func (client *Client) updateBlock(block *types.Block, txHashList [][]byte) (*types.Block, *types.Block, [][]byte) {
 	lastBlock := client.GetCurrentBlock()
+	newblock := *block
 	//需要去重复tx
 	if lastBlock.Height != newblock.Height-1 {
 		newblock.Txs = client.CheckTxDup(newblock.Txs)
@@ -653,7 +658,7 @@ func (client *Client) updateBlock(newblock *types.Block, txHashList [][]byte) (*
 	//tx 有更新
 	if len(txs) > 0 {
 		//防止区块过大
-		txs = client.AddTxsToBlock(newblock, txs)
+		txs = client.AddTxsToBlock(&newblock, txs)
 		if len(txs) > 0 {
 			txHashList = append(txHashList, getTxHashes(txs)...)
 		}
@@ -661,12 +666,16 @@ func (client *Client) updateBlock(newblock *types.Block, txHashList [][]byte) (*
 	if lastBlock.BlockTime >= newblock.BlockTime {
 		newblock.BlockTime = lastBlock.BlockTime + 1
 	}
-	return lastBlock, txHashList
+	return &newblock, lastBlock, txHashList
 }
 
 // CreateBlock ticket create block func
 func (client *Client) CreateBlock() {
 	for {
+		if client.IsClosed() {
+			tlog.Info("create block stop")
+			break
+		}
 		if !client.IsMining() || !(client.IsCaughtUp() || client.Cfg.ForceMining) {
 			tlog.Debug("createblock.ismining is disable or client is caughtup is false")
 			time.Sleep(time.Second)
@@ -679,14 +688,17 @@ func (client *Client) CreateBlock() {
 		}
 		block, lastBlock := client.createBlock()
 		hashlist := getTxHashes(block.Txs)
-		for !client.Miner(lastBlock, block) {
+		for err := client.Miner(lastBlock, block); err != nil; err = client.Miner(lastBlock, block) {
+			if err == queue.ErrIsQueueClosed {
+				break
+			}
 			//加入新的txs, 继续挖矿
 			lasttime := block.BlockTime
 			//只有时间增加了1s影响，影响难度计算了，才会去更新区块
 			for lasttime >= types.Now().Unix() {
 				time.Sleep(time.Second / 10)
 			}
-			lastBlock, hashlist = client.updateBlock(block, hashlist)
+			block, lastBlock, hashlist = client.updateBlock(block, hashlist)
 		}
 	}
 }

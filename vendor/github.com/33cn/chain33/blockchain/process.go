@@ -112,12 +112,15 @@ func (b *BlockChain) blockExists(hash []byte) bool {
 	}
 
 	// 检测数据库中是否存在，通过hash获取blockheader，不存在就返回false。
-	blockheader, _ := b.blockStore.GetBlockHeaderByHash(hash)
-	if blockheader == nil {
+	blockheader, err := b.blockStore.GetBlockHeaderByHash(hash)
+	if blockheader == nil || err != nil {
 		return false
 	}
 	//block存在数据库中时，需要确认是否在主链上。不在主链上返回false
-	height, _ := b.blockStore.GetHeightByBlockHash(hash)
+	height, err := b.blockStore.GetHeightByBlockHash(hash)
+	if err != nil {
+		return false
+	}
 	return height != -1
 }
 
@@ -234,9 +237,13 @@ func (b *BlockChain) connectBestChain(node *blockNode, block *types.BlockDetail)
 	chainlog.Debug("connectBestChain", "parentHash", common.ToHex(parentHash), "bestChain.Tip().hash", common.ToHex(b.bestChain.Tip().hash))
 
 	// 获取tip节点的block总难度tipid
-	tiptd, _ := b.blockStore.GetTdByBlockHash(b.bestChain.Tip().hash)
-	parenttd, _ := b.blockStore.GetTdByBlockHash(parentHash)
-	if parenttd == nil {
+	tiptd, Err := b.blockStore.GetTdByBlockHash(b.bestChain.Tip().hash)
+	if tiptd == nil || Err != nil {
+		chainlog.Error("connectBestChain tiptd is not exits!", "height", b.bestChain.Tip().height, "b.bestChain.Tip().hash", common.ToHex(b.bestChain.Tip().hash))
+		return nil, false, Err
+	}
+	parenttd, Err := b.blockStore.GetTdByBlockHash(parentHash)
+	if parenttd == nil || Err != nil {
 		chainlog.Error("connectBestChain parenttd is not exits!", "height", block.Block.Height, "parentHash", common.ToHex(parentHash), "block.Block.hash", common.ToHex(block.Block.Hash()))
 		return nil, false, types.ErrParentTdNoExist
 	}
@@ -377,10 +384,12 @@ func (b *BlockChain) connectBlock(node *blockNode, blockdetail *types.BlockDetai
 
 	b.query.updateStateHash(blockdetail.GetBlock().GetStateHash())
 
-	b.SendAddBlockEvent(blockdetail)
-
+	err = b.SendAddBlockEvent(blockdetail)
+	if err != nil {
+		chainlog.Debug("connectBlock SendAddBlockEvent", "err", err)
+	}
 	// 通知此block已经处理完，主要处理孤儿节点时需要设置
-	b.task.Done(blockdetail.Block.GetHeight())
+	b.syncTask.Done(blockdetail.Block.GetHeight())
 
 	//广播此block到全网络
 	if node.broadcast {
@@ -393,7 +402,7 @@ func (b *BlockChain) connectBlock(node *blockNode, blockdetail *types.BlockDetai
 		}
 	}
 	//目前非平行链并开启isRecordBlockSequence功能
-	if isRecordBlockSequence && !isParaChain {
+	if b.isRecordBlockSequence && !b.isParaChain {
 		b.pushseq.updateSeq(lastSequence)
 	}
 	return blockdetail, nil
@@ -438,7 +447,10 @@ func (b *BlockChain) disconnectBlock(node *blockNode, blockdetail *types.BlockDe
 	b.bestChain.DelTip(node)
 
 	//通知共识，mempool和钱包删除block
-	b.SendDelBlockEvent(blockdetail)
+	err = b.SendDelBlockEvent(blockdetail)
+	if err != nil {
+		chainlog.Error("disconnectBlock SendDelBlockEvent", "err", err)
+	}
 	b.query.updateStateHash(node.parent.statehash)
 
 	//确定node的父节点升级成tip节点
@@ -459,7 +471,7 @@ func (b *BlockChain) disconnectBlock(node *blockNode, blockdetail *types.BlockDe
 	chainlog.Debug("disconnectBlock success", "newtipnode.hash", common.ToHex(newtipnode.hash), "delblock.parent.hash", common.ToHex(blockdetail.Block.GetParentHash()))
 
 	//目前非平行链并开启isRecordBlockSequence功能
-	if isRecordBlockSequence && !isParaChain {
+	if b.isRecordBlockSequence && !b.isParaChain {
 		b.pushseq.updateSeq(lastSequence)
 	}
 	return nil
@@ -501,22 +513,24 @@ func (b *BlockChain) reorganizeChain(detachNodes, attachNodes *list.List) error 
 	//通过node中的blockhash获取block信息从db中
 	for e := detachNodes.Front(); e != nil; e = e.Next() {
 		n := e.Value.(*blockNode)
-		var block *types.BlockDetail
-		block, _ = b.LoadBlockByHash(n.hash)
+		block, err := b.LoadBlockByHash(n.hash)
 
 		// 需要删除的blocks
-		detachBlocks = append(detachBlocks, block)
-		chainlog.Debug("reorganizeChain detachBlocks ", "height", block.Block.Height, "hash", common.ToHex(block.Block.Hash()))
+		if block != nil && err == nil {
+			detachBlocks = append(detachBlocks, block)
+			chainlog.Debug("reorganizeChain detachBlocks ", "height", block.Block.Height, "hash", common.ToHex(block.Block.Hash()))
+		}
 	}
 
 	for e := attachNodes.Front(); e != nil; e = e.Next() {
 		n := e.Value.(*blockNode)
-		var block *types.BlockDetail
-		block, _ = b.LoadBlockByHash(n.hash)
+		block, err := b.LoadBlockByHash(n.hash)
 
 		// 需要加载到db的blocks
-		attachBlocks = append(attachBlocks, block)
-		chainlog.Debug("reorganizeChain attachBlocks ", "height", block.Block.Height, "hash", common.ToHex(block.Block.Hash()))
+		if block != nil && err == nil {
+			attachBlocks = append(attachBlocks, block)
+			chainlog.Debug("reorganizeChain attachBlocks ", "height", block.Block.Height, "hash", common.ToHex(block.Block.Hash()))
+		}
 	}
 
 	// Disconnect blocks from the main chain.

@@ -226,6 +226,10 @@ func (chain *BlockChain) ProcGetBlockDetailsMsg(requestblock *types.ReqBlocks) (
 
 //ProcAddBlockMsg 处理从peer对端同步过来的block消息
 func (chain *BlockChain) ProcAddBlockMsg(broadcast bool, blockdetail *types.BlockDetail, pid string) (*types.BlockDetail, error) {
+	beg := types.Now()
+	defer func() {
+		chainlog.Info("ProcAddBlockMsg", "cost", types.Since(beg))
+	}()
 	block := blockdetail.Block
 	if block == nil {
 		chainlog.Error("ProcAddBlockMsg input block is null")
@@ -236,14 +240,14 @@ func (chain *BlockChain) ProcAddBlockMsg(broadcast bool, blockdetail *types.Bloc
 		blockdetail = b
 	}
 	//非孤儿block或者已经存在的block
-	if chain.task.InProgress() {
+	if chain.syncTask.InProgress() {
 		if (!isorphan && err == nil) || (err == types.ErrBlockExist) {
-			chain.task.Done(blockdetail.Block.GetHeight())
+			chain.syncTask.Done(blockdetail.Block.GetHeight())
 		}
 	}
-	//forktask 运行时设置对应的blockdone
-	if chain.forktask.InProgress() {
-		chain.forktask.Done(blockdetail.Block.GetHeight())
+	//downLoadTask 运行时设置对应的blockdone
+	if chain.downLoadTask.InProgress() {
+		chain.downLoadTask.Done(blockdetail.Block.GetHeight())
 	}
 	//此处只更新广播block的高度
 	if broadcast {

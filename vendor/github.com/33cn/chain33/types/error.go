@@ -75,6 +75,7 @@ var (
 	ErrFeeTooLow                  = errors.New("ErrFeeTooLow")
 	ErrEmptyTx                    = errors.New("ErrEmptyTx")
 	ErrTxFeeTooLow                = errors.New("ErrTxFeeTooLow")
+	ErrTxFeeTooHigh               = errors.New("ErrTxFeeTooHigh")
 	ErrTxMsgSizeTooBig            = errors.New("ErrTxMsgSizeTooBig")
 	ErrFutureBlock                = errors.New("ErrFutureBlock")
 	ErrHashNotFound               = errors.New("ErrHashNotFound")
@@ -134,7 +135,7 @@ var (
 	ErrFromHex            = errors.New("ErrFromHex")
 	ErrPrivKeyFromBytes   = errors.New("ErrFromHex")
 	ErrParentHash         = errors.New("ErrParentHash")
-
+	ErrInvalidPassWord    = errors.New("ErrInvalidPassWord")
 	//ErrPing p2p模块错误类型
 	ErrPing       = errors.New("ErrPingSignature")
 	ErrVersion    = errors.New("ErrVersionNoSupport")
@@ -158,9 +159,11 @@ var (
 	ErrTxGroupNotSupport          = errors.New("ErrTxGroupNotSupport")
 	ErrNotAllowKey                = errors.New("ErrNotAllowKey")
 	ErrNotAllowMemSetKey          = errors.New("ErrNotAllowMemSetKey")
+	ErrNotAllowMemSetLocalKey     = errors.New("ErrNotAllowMemSetLocalKey")
 	ErrDataBaseDamage             = errors.New("ErrDataBaseDamage")
 	ErrIndex                      = errors.New("ErrIndex")
 	ErrTxGroupParaCount           = errors.New("ErrTxGroupParaCount")
+	ErrTxGroupParaMainMixed       = errors.New("ErrTxGroupParaMainMixed")
 
 	//ErrInvalidMainnetRPCAddr rpc模块的错误类型
 	ErrInvalidMainnetRPCAddr = errors.New("ErrInvalidMainnetRPCAddr")
@@ -168,6 +171,9 @@ var (
 	ErrDBFlag      = errors.New("ErrDBFlag")
 	ErrLocalPrefix = errors.New("ErrLocalPrefix")
 	ErrLocalKeyLen = errors.New("ErrLocalKeyLen")
+	//ErrNotSetInTransaction 必须set 在 事务 中
+	ErrNotSetInTransaction = errors.New("can not set kvs not in transaction")
+	ErrLocalDBTxDupOpen    = errors.New("ErrLocalDBTxDupOpen")
 
 	ErrCloneForkFrom      = errors.New("ErrCloneForkFrom")
 	ErrCloneForkToExist   = errors.New("ErrCloneForkToExist")
@@ -176,4 +182,8 @@ var (
 	ErrHeightLessZero      = errors.New("ErrHeightLessZero")
 	ErrHeightOverflow      = errors.New("ErrHeightOverflow")
 	ErrRecordBlockSequence = errors.New("ErrRecordBlockSequence")
+	ErrExecPanic           = errors.New("ErrExecPanic")
+
+	ErrDisableWrite = errors.New("ErrDisableWrite")
+	ErrDisableRead  = errors.New("ErrDisableRead")
 )

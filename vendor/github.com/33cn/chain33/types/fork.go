@@ -150,9 +150,13 @@ func (f *Forks) CloneZero(from, to string) error {
 }
 
 // CloneMaxHeight fork信息拷贝并设置所有fork高度MaxHeight
-func (f *Forks) CloneMaxHeight(from, to string) {
-	f.Clone(from, to)
+func (f *Forks) CloneMaxHeight(from, to string) error {
+	err := f.Clone(from, to)
+	if err != nil {
+		return err
+	}
 	f.SetAllFork(to, MaxHeight)
+	return nil
 }
 
 // SetAllFork 设置所有fork的高度
@@ -192,7 +196,7 @@ func (f *Forks) IsDappFork(title string, height int64, dapp, fork string) bool {
 //SetTestNetFork bityuan test net fork
 func SetTestNetFork() {
 	systemFork.SetFork("chain33", "ForkChainParamV1", 110000)
-	systemFork.SetFork("chain33", "ForkChainParamV2", MaxHeight)
+	systemFork.SetFork("chain33", "ForkChainParamV2", 1692674)
 	systemFork.SetFork("chain33", "ForkCheckTxDup", 75260)
 	systemFork.SetFork("chain33", "ForkBlockHash", 209186)
 	systemFork.SetFork("chain33", "ForkMinerTime", 350000)
@@ -203,9 +207,13 @@ func SetTestNetFork() {
 	systemFork.SetFork("chain33", "ForkResetTx0", 453400)
 	systemFork.SetFork("chain33", "ForkExecRollback", 706531)
 	systemFork.SetFork("chain33", "ForkTxHeight", 806578)
-	systemFork.SetFork("chain33", "ForkTxGroupPara", 806578)
 	systemFork.SetFork("chain33", "ForkCheckBlockTime", 1200000)
 	systemFork.SetFork("chain33", "ForkMultiSignAddress", 1298600)
+	systemFork.SetFork("chain33", "ForkStateDBSet", 1572391)
+	systemFork.SetFork("chain33", "ForkBlockCheck", 1560000)
+	systemFork.SetFork("chain33", "ForkLocalDBAccess", 1572391)
+	systemFork.SetFork("chain33", "ForkTxGroupPara", 1687250)
+	systemFork.SetFork("chain33", "ForkBase58AddressCheck", 1800000)
 
 }
 
@@ -219,7 +227,10 @@ func setLocalFork() {
 
 //paraName not used currently
 func setForkForPara(paraName string) {
-	systemFork.CloneZero("chain33", paraName)
+	err := systemFork.CloneZero("chain33", paraName)
+	if err != nil {
+		tlog.Error("setForkForPara", "error", err)
+	}
 	systemFork.ReplaceFork(paraName, "ForkBlockHash", 1)
 }
 

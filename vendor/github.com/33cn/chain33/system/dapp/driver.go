@@ -29,6 +29,9 @@ const (
 	TxIndexFrom = 1
 	// TxIndexTo transaction index to
 	TxIndexTo = 2
+
+	//ExecLocalSameTime Exec 的时候 同时执行 ExecLocal
+	ExecLocalSameTime = int64(1)
 )
 
 // Driver defines some interface
@@ -69,6 +72,7 @@ type Driver interface {
 	GetFuncMap() map[string]reflect.Method
 	GetExecutorType() types.ExecutorType
 	CheckReceiptExecOk() bool
+	ExecutorOrder() int64
 }
 
 // DriverBase defines driverbase type
@@ -104,6 +108,12 @@ func (d *DriverBase) GetPayloadValue() types.Message {
 // GetExecutorType defines get executortype func
 func (d *DriverBase) GetExecutorType() types.ExecutorType {
 	return d.ety
+}
+
+//ExecutorOrder 执行顺序, 如果要使用 ExecLocalSameTime
+//那么会同时执行 ExecLocal
+func (d *DriverBase) ExecutorOrder() int64 {
+	return 0
 }
 
 //GetLastHash 获取最后区块的hash，主链和平行链不同
@@ -274,6 +284,10 @@ func CheckAddress(addr string, height int64) error {
 	if !types.IsFork(height, "ForkMultiSignAddress") && err == address.ErrCheckVersion {
 		return nil
 	}
+	if !types.IsFork(height, "ForkBase58AddressCheck") && err == address.ErrAddressChecksum {
+		return nil
+	}
+
 	return err
 }
 
@@ -363,7 +377,7 @@ func (d *DriverBase) GetTxGroup(index int) ([]*types.Transaction, error) {
 	for i := index; i >= 0 && i >= index-c; i-- {
 		if bytes.Equal(d.txs[i].Header, d.txs[i].Hash()) { //find header
 			txgroup := types.Transactions{Txs: d.txs[i : i+c]}
-			err := txgroup.Check(d.GetHeight(), types.GInt("MinFee"))
+			err := txgroup.Check(d.GetHeight(), types.GInt("MinFee"), types.GInt("MaxFee"))
 			if err != nil {
 				return nil, err
 			}
@@ -479,4 +493,28 @@ func (d *DriverBase) SetTxs(txs []*types.Transaction) {
 // CheckReceiptExecOk default return true to check if receipt ty is ok, for specific plugin can overwrite it self
 func (d *DriverBase) CheckReceiptExecOk() bool {
 	return false
+}
+
+//AddRollbackKV add rollback kv
+func (d *DriverBase) AddRollbackKV(tx *types.Transaction, execer []byte, kvs []*types.KeyValue) []*types.KeyValue {
+	k := types.CalcRollbackKey(types.GetRealExecName(execer), tx.Hash())
+	kvc := NewKVCreator(d.GetLocalDB(), types.CalcLocalPrefix(execer), k)
+	kvc.AddListNoPrefix(kvs)
+	kvc.AddRollbackKV()
+	return kvc.KVList()
+}
+
+//DelRollbackKV del rollback kv when exec_del_local
+func (d *DriverBase) DelRollbackKV(tx *types.Transaction, execer []byte) ([]*types.KeyValue, error) {
+	krollback := types.CalcRollbackKey(types.GetRealExecName(execer), tx.Hash())
+	kvc := NewKVCreator(d.GetLocalDB(), types.CalcLocalPrefix(execer), krollback)
+	kvs, err := kvc.GetRollbackKVList()
+	if err != nil {
+		return nil, err
+	}
+	for _, kv := range kvs {
+		kvc.AddNoPrefix(kv.Key, kv.Value)
+	}
+	kvc.DelRollbackKV()
+	return kvc.KVList(), nil
 }

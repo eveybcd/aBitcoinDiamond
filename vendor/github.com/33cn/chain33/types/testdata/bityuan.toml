@@ -66,6 +66,7 @@ keyFile="key.pem"
 poolCacheSize=102400
 minTxFee=100000
 maxTxNumPerAccount=100
+maxTxFee=1000000000
 
 [consensus]
 name="ticket"
@@ -145,6 +146,7 @@ minerwhitelist=["*"]
 [exec]
 isFree=false
 minExecFee=100000
+maxExecFee=1000000000
 enableStat=false
 enableMVCC=false
 
@@ -156,6 +158,7 @@ saveTokenTxList=false
 [fork.system]
 ForkChainParamV1= 0
 ForkChainParamV2= -1
+ForkStateDBSet=-1
 ForkCheckTxDup=0
 ForkBlockHash= 1
 ForkMinerTime= 0
@@ -169,6 +172,9 @@ ForkTxHeight= -1
 ForkTxGroupPara= -1
 ForkCheckBlockTime=1200000
 ForkMultiSignAddress=1298600
+ForkBlockCheck=1725000
+ForkLocalDBAccess=1
+ForkBase58AddressCheck=1800000
 
 [fork.sub.coins]
 Enable=0

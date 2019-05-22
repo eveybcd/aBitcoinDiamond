@@ -34,7 +34,10 @@ var closeCmd = &cobra.Command{
 	Use:   "close",
 	Short: "Close " + types.GetTitle(),
 	Run: func(cmd *cobra.Command, args []string) {
-		rpcLaddr, _ := cmd.Flags().GetString("rpc_laddr")
+		rpcLaddr, err := cmd.Flags().GetString("rpc_laddr")
+		if err != nil {
+			panic(err)
+		}
 		//		rpc, _ := jsonrpc.NewJSONClient(rpcLaddr)
 		//		rpc.Call("Chain33.CloseQueue", nil, nil)
 		var res rpctypes.Reply
@@ -48,7 +51,6 @@ func init() {
 		commands.CertCmd(),
 		commands.AccountCmd(),
 		commands.BlockCmd(),
-		commands.BTYCmd(),
 		commands.CoinsCmd(),
 		commands.ExecCmd(),
 		commands.MempoolCmd(),
