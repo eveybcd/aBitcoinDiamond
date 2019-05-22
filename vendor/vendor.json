@@ -1,0 +1,13 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "ptYfCRwenILbkz8sqnkd+AuzwKo=",
+			"path": "github.com/ccconnor/go-x13bcd",
+			"revision": "4fa08880be1b9cb467574dcb1a7d110c4095c649",
+			"revisionTime": "2019-05-21T09:46:30Z"
+		}
+	],
+	"rootPath": "github.com/aBitcoinDiamond"
+}
