@@ -19,18 +19,8 @@ import (
 	"github.com/aBitcoinDiamond/database"
 	"github.com/aBitcoinDiamond/limits"
 
-	_ "github.com/33cn/chain33/system"
-	_ "github.com/aBitcoinDiamond/slave/consensus/para"
-	//_ "github.com/aBitcoinDiamond/slave"
-	//_ "github.com/bityuan/bityuan/plugin"
-	_ "github.com/aBitcoinDiamond/slave/consensus/ticket"
-	_ "github.com/aBitcoinDiamond/slave/dapp/evm"
-
-	"flag"
-	"github.com/33cn/chain33/util/cli"
+	"github.com/aBitcoinDiamond/slave"
 )
-
-var percent = flag.Int("p", 0, "SetGCPercent") //slave chain
 
 const (
 	// blockDbNamePrefix is the prefix for the block database name.  The
@@ -308,11 +298,6 @@ func loadBlockDB() (database.DB, error) {
 	return db, nil
 }
 
-func startSlave() {
-
-	cli.RunChain33("slaveChain")
-}
-
 func startMaster() {
 	// Use all processor cores.
 	runtime.GOMAXPROCS(runtime.NumCPU())
@@ -351,7 +336,7 @@ func startMaster() {
 
 func main() {
 	//start master chain
-	startMaster()
+	//startMaster()
 	//start slave chain
-	//startSlave()
+	slave.StartSlave()
 }

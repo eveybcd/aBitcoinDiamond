@@ -1,4 +1,4 @@
-package main
+package slave
 
 var slaveChain = `
 TestNet=false

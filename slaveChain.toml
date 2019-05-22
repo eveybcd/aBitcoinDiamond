@@ -44,7 +44,7 @@ batchsync=false
 isRecordBlockSequence=true
 # 是否为平行链节点
 isParaChain=false
-enableTxQuickIndex=false
+enableTxQuickIndex=true
 [p2p]
 # P2P服务监听端口号
 # port=13802
