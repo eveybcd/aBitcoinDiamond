@@ -15,7 +15,7 @@ import (
 
 const (
 	// TxVersion is the current latest supported transaction version.
-	TxVersion = 1
+	TxVersion = 12
 
 	// MaxTxInSequenceNum is the maximum sequence number the sequence field
 	// of a transaction input can be.
@@ -287,10 +287,11 @@ func NewTxOut(value int64, pkScript []byte) *TxOut {
 // Use the AddTxIn and AddTxOut functions to build up the list of transaction
 // inputs and outputs.
 type MsgTx struct {
-	Version  int32
-	TxIn     []*TxIn
-	TxOut    []*TxOut
-	LockTime uint32
+	Version      int32
+	PreBlockHash chainhash.Hash
+	TxIn         []*TxIn
+	TxOut        []*TxOut
+	LockTime     uint32
 }
 
 // AddTxIn adds a transaction input to the message.
@@ -335,10 +336,11 @@ func (msg *MsgTx) Copy() *MsgTx {
 	// Create new tx and start by copying primitive values and making space
 	// for the transaction inputs and outputs.
 	newTx := MsgTx{
-		Version:  msg.Version,
-		TxIn:     make([]*TxIn, 0, len(msg.TxIn)),
-		TxOut:    make([]*TxOut, 0, len(msg.TxOut)),
-		LockTime: msg.LockTime,
+		Version:      msg.Version,
+		PreBlockHash: msg.PreBlockHash,
+		TxIn:         make([]*TxIn, 0, len(msg.TxIn)),
+		TxOut:        make([]*TxOut, 0, len(msg.TxOut)),
+		LockTime:     msg.LockTime,
 	}
 
 	// Deep copy the old TxIn data.
@@ -414,6 +416,11 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32, enc MessageEncoding) error
 		return err
 	}
 	msg.Version = int32(version)
+
+	_, err = io.ReadFull(r, msg.PreBlockHash[:])
+	if err != nil {
+		return err
+	}
 
 	count, err := ReadVarInt(r, pver)
 	if err != nil {
@@ -684,6 +691,11 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32, enc MessageEncoding) error
 		return err
 	}
 
+	_, err = w.Write(msg.PreBlockHash[:])
+	if err != nil {
+		return err
+	}
+
 	// If the encoding version is set to WitnessEncoding, and the Flags
 	// field for the MsgTx aren't 0x00, then this indicates the transaction
 	// is to be encoded using the new witness inclusionary structure
@@ -787,9 +799,9 @@ func (msg *MsgTx) SerializeNoWitness(w io.Writer) error {
 // baseSize returns the serialized size of the transaction without accounting
 // for any witness data.
 func (msg *MsgTx) baseSize() int {
-	// Version 4 bytes + LockTime 4 bytes + Serialized varint size for the
-	// number of transaction inputs and outputs.
-	n := 8 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
+	// Version 4 bytes + PreBlockHash 32 bytes + LockTime 4 bytes + Serialized
+	// varint size for the number of transaction inputs and outputs.
+	n := 40 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
 
 	for _, txIn := range msg.TxIn {

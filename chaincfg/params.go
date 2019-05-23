@@ -26,6 +26,8 @@ var (
 	// have for the main network.  It is the value 2^224 - 1.
 	mainPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 224), bigOne)
 
+	bcdMainPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 216), bigOne)
+
 	// regressionPowLimit is the highest proof of work value a Bitcoin block
 	// can have for the regression test network.  It is the value 2^255 - 1.
 	regressionPowLimit = new(big.Int).Sub(new(big.Int).Lsh(bigOne, 255), bigOne)
@@ -234,35 +236,44 @@ type Params struct {
 	// BCDPowLimitBits defines the highest allowed proof of work value for a
 	// block of bcd in compact form.
 	BCDPowLimitBits uint32
+
+	BCDTargetTimespan       time.Duration
+	BCDRetargetAdjustFactor int64
 }
 
 // MainNetParams defines the network parameters for the main Bitcoin network.
 var MainNetParams = Params{
 	Name:        "mainnet",
 	Net:         wire.MainNet,
-	DefaultPort: "8333",
+	DefaultPort: "7117",
 	DNSSeeds: []DNSSeed{
-		{"seed.bitcoin.sipa.be", true},
-		{"dnsseed.bluematt.me", true},
-		{"dnsseed.bitcoin.dashjr.org", false},
-		{"seed.bitcoinstats.com", true},
-		{"seed.bitnodes.io", false},
-		{"seed.bitcoin.jonasschnelli.ch", true},
+		{"seed1.dns.btcd.io", true},
+		{"seed2.dns.btcd.io", true},
+		{"seed3.dns.btcd.io", true},
+		{"seed4.dns.btcd.io", true},
+		{"seed5.dns.btcd.io", true},
+		{"seed6.dns.btcd.io", true},
 	},
 
 	// Chain parameters
 	GenesisBlock:             &genesisBlock,
 	GenesisHash:              &genesisHash,
+	BCDGenesisBlockReward:    1400 * 10000 * 1e7,
 	PowLimit:                 mainPowLimit,
+	BCDPowLimit:              bcdMainPowLimit,
 	PowLimitBits:             0x1d00ffff,
+	BCDPowLimitBits:          0x1c00ffff,
 	BIP0034Height:            227931, // 000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8
 	BIP0065Height:            388381, // 000000000000000004c2b624ed5d7756c508d90fd0da2c7c679febfa6c4735f0
 	BIP0066Height:            363725, // 00000000000000000379eaa19dce8c9b722d46ae6a57c2f1a988119488b50931
+	BCDHeight:                495867,
 	CoinbaseMaturity:         100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
+	BCDTargetTimespan:        time.Hour * 12,      // 12 hours
 	TargetTimePerBlock:       time.Minute * 10,    // 10 minutes
 	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
+	BCDRetargetAdjustFactor:  2,
 	ReduceMinDifficulty:      false,
 	MinDiffReductionTime:     0,
 	GenerateSupported:        false,
@@ -291,9 +302,9 @@ var MainNetParams = Params{
 		{430000, newHashFromStr("000000000000000001868b2bb3a285f3cc6b33ea234eb70facf4dcdf22186b87")},
 		{460000, newHashFromStr("000000000000000000ef751bbce8e744ad303c47ece06c8d863e4d417efc258c")},
 		{490000, newHashFromStr("000000000000000000de069137b17b8d5a3dfbd5b145b2dcfb203f15d0c4de90")},
-		{520000, newHashFromStr("0000000000000000000d26984c0229c9f6962dc74db0a6d525f2f1640396f69c")},
-		{550000, newHashFromStr("000000000000000000223b7a2298fb1c6c75fb0efc28a4c56853ff4112ec6bc9")},
-		{560000, newHashFromStr("0000000000000000002c7b276daf6efb2b6aa68e2ce3be67ef925b3264ae7122")},
+		{495867, newHashFromStr("458535405446053c9db6a16ec7e5b022429fedde605ce81bb24c6cfe6f43fc89")},
+		{550000, newHashFromStr("edff660312c4588ffc410b0386626efb563fce5855f64c6f11a05688c08144a1")},
+		{560000, newHashFromStr("ddab151b451484a40bb3cad18817a31468be71125020c81cc221c0fbce7aabe8")},
 	},
 
 	// Consensus rule change deployments.
@@ -325,7 +336,7 @@ var MainNetParams = Params{
 
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
-	Bech32HRPSegwit: "bc", // always bc for main net
+	Bech32HRPSegwit: "bcd", // always bcd for main net
 
 	// Address encoding magics
 	PubKeyHashAddrID:        0x00, // starts with 1
@@ -349,22 +360,28 @@ var MainNetParams = Params{
 var RegressionNetParams = Params{
 	Name:        "regtest",
 	Net:         wire.TestNet,
-	DefaultPort: "18444",
+	DefaultPort: "17117",
 	DNSSeeds:    []DNSSeed{},
 
 	// Chain parameters
 	GenesisBlock:             &regTestGenesisBlock,
 	GenesisHash:              &regTestGenesisHash,
+	BCDGenesisBlockReward:    500 * 1e7,
 	PowLimit:                 regressionPowLimit,
+	BCDPowLimit:              regressionPowLimit,
 	PowLimitBits:             0x207fffff,
+	BCDPowLimitBits:          0x207fffff,
 	CoinbaseMaturity:         100,
 	BIP0034Height:            100000000, // Not active - Permit ver 1 blocks
 	BIP0065Height:            1351,      // Used by regression tests
 	BIP0066Height:            1251,      // Used by regression tests
+	BCDHeight:                1,
 	SubsidyReductionInterval: 150,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
+	BCDTargetTimespan:        time.Hour * 12,      // 12 hours
 	TargetTimePerBlock:       time.Minute * 10,    // 10 minutes
 	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
+	BCDRetargetAdjustFactor:  2,
 	ReduceMinDifficulty:      true,
 	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
 	GenerateSupported:        true,
@@ -401,7 +418,7 @@ var RegressionNetParams = Params{
 
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
-	Bech32HRPSegwit: "bcrt", // always bcrt for reg test net
+	Bech32HRPSegwit: "bcdrt", // always bcrt for reg test net
 
 	// Address encoding magics
 	PubKeyHashAddrID: 0x6f, // starts with m or n
@@ -423,27 +440,30 @@ var RegressionNetParams = Params{
 var TestNet3Params = Params{
 	Name:        "testnet3",
 	Net:         wire.TestNet3,
-	DefaultPort: "18333",
+	DefaultPort: "17117",
 	DNSSeeds: []DNSSeed{
-		{"testnet-seed.bitcoin.jonasschnelli.ch", true},
-		{"testnet-seed.bitcoin.schildbach.de", false},
-		{"seed.tbtc.petertodd.org", true},
-		{"testnet-seed.bluematt.me", false},
+		{"test1.dns.btcd.io", true},
 	},
 
 	// Chain parameters
 	GenesisBlock:             &testNet3GenesisBlock,
 	GenesisHash:              &testNet3GenesisHash,
+	BCDGenesisBlockReward:    140 * 10000 * 1e7,
 	PowLimit:                 testNet3PowLimit,
+	BCDPowLimit:              testNet3PowLimit,
 	PowLimitBits:             0x1d00ffff,
+	BCDPowLimitBits:          0x1d00ffff,
 	BIP0034Height:            21111,  // 0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8
 	BIP0065Height:            581885, // 00000000007f6655f22f98e72ed80d8b06dc761d5da09df0fa1dc4be4f861eb6
 	BIP0066Height:            330776, // 000000002104c8c45e99a8853285a3b592602a3ccde2b832481da85e9e4ba182
+	BCDHeight:                1065121,
 	CoinbaseMaturity:         100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
+	BCDTargetTimespan:        time.Hour * 12,      // 12 hours
 	TargetTimePerBlock:       time.Minute * 10,    // 10 minutes
 	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
+	BCDRetargetAdjustFactor:  2,
 	ReduceMinDifficulty:      true,
 	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
 	GenerateSupported:        false,
@@ -461,9 +481,7 @@ var TestNet3Params = Params{
 		{800010, newHashFromStr("000000000017ed35296433190b6829db01e657d80631d43f5983fa403bfdb4c1")},
 		{900000, newHashFromStr("0000000000356f8d8924556e765b7a94aaebc6b5c8685dcfa2b1ee8b41acd89b")},
 		{1000007, newHashFromStr("00000000001ccb893d8a1f25b70ad173ce955e5f50124261bbbc50379a612ddf")},
-		{1100007, newHashFromStr("00000000000abc7b2cd18768ab3dee20857326a818d1946ed6796f42d66dd1e8")},
-		{1200007, newHashFromStr("00000000000004f2dc41845771909db57e04191714ed8c963f7e56713a7b6cea")},
-		{1300007, newHashFromStr("0000000072eab69d54df75107c052b26b0395b44f77578184293bf1bb1dbd9fa")},
+		{1065121, newHashFromStr("0x890f1ad9a143da58806298072ad6d66e7a6086c7e6629265c9efb649630baa1c")},
 	},
 
 	// Consensus rule change deployments.
@@ -495,7 +513,7 @@ var TestNet3Params = Params{
 
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
-	Bech32HRPSegwit: "tb", // always tb for test net
+	Bech32HRPSegwit: "tbcd", // always tb for test net
 
 	// Address encoding magics
 	PubKeyHashAddrID:        0x6f, // starts with m or n
@@ -523,22 +541,27 @@ var TestNet3Params = Params{
 var SimNetParams = Params{
 	Name:        "simnet",
 	Net:         wire.SimNet,
-	DefaultPort: "18555",
+	DefaultPort: "17117",
 	DNSSeeds:    []DNSSeed{}, // NOTE: There must NOT be any seeds.
 
 	// Chain parameters
 	GenesisBlock:             &simNetGenesisBlock,
 	GenesisHash:              &simNetGenesisHash,
+	BCDGenesisBlockReward:    500 * 1e7,
 	PowLimit:                 simNetPowLimit,
+	BCDPowLimit:              simNetPowLimit,
 	PowLimitBits:             0x207fffff,
+	BCDPowLimitBits:          0x207fffff,
 	BIP0034Height:            0, // Always active on simnet
 	BIP0065Height:            0, // Always active on simnet
 	BIP0066Height:            0, // Always active on simnet
 	CoinbaseMaturity:         100,
 	SubsidyReductionInterval: 210000,
 	TargetTimespan:           time.Hour * 24 * 14, // 14 days
+	BCDTargetTimespan:        time.Hour * 12,      // 12 hours
 	TargetTimePerBlock:       time.Minute * 10,    // 10 minutes
 	RetargetAdjustmentFactor: 4,                   // 25% less, 400% more
+	BCDRetargetAdjustFactor:  2,
 	ReduceMinDifficulty:      true,
 	MinDiffReductionTime:     time.Minute * 20, // TargetTimePerBlock * 2
 	GenerateSupported:        true,
@@ -575,7 +598,7 @@ var SimNetParams = Params{
 
 	// Human-readable part for Bech32 encoded segwit addresses, as defined in
 	// BIP 173.
-	Bech32HRPSegwit: "sb", // always sb for sim net
+	Bech32HRPSegwit: "sim", // always sb for sim net
 
 	// Address encoding magics
 	PubKeyHashAddrID:        0x3f, // starts with S

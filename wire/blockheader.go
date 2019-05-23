@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/aBitcoinDiamond/chaincfg/chainhash"
+	"github.com/ccconnor/go-x13bcd"
 )
 
 // MaxBlockHeaderPayload is the maximum number of bytes a block header can be.
@@ -53,6 +54,21 @@ func (h *BlockHeader) BlockHash() chainhash.Hash {
 	buf := bytes.NewBuffer(make([]byte, 0, MaxBlockHeaderPayload))
 	_ = writeBlockHeader(buf, 0, h)
 
+	return chainhash.DoubleHashH(buf.Bytes())
+}
+
+// BlockHash computes the block identifier hash for the given block header.
+func (h *BlockHeader) BlockPowHash(isBcdBlock bool) chainhash.Hash {
+	// Encode the header and x13 everything prior to the number of
+	// transactions.  Ignore the error returns since there is no way the
+	// encode could fail except being out of memory which would cause a
+	// run-time panic.
+	buf := bytes.NewBuffer(make([]byte, 0, MaxBlockHeaderPayload))
+	_ = writeBlockHeader(buf, 0, h)
+
+	if isBcdBlock {
+		return chainhash.Hash(x13.HashX13sm3(buf.Bytes()))
+	}
 	return chainhash.DoubleHashH(buf.Bytes())
 }
 

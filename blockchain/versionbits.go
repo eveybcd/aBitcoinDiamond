@@ -27,6 +27,8 @@ const (
 	// version bits scheme.
 	vbNumBits = 29
 
+	vbForkBcd = 0x40000000
+
 	// unknownVerNumToCheck is the number of previous blocks to consider
 	// when checking for a threshold of unknown block versions for the
 	// purposes of warning the user.
@@ -202,6 +204,11 @@ func (b *BlockChain) calcNextBlockVersion(prevNode *blockNode) (int32, error) {
 	// that is either in the process of being voted on, or locked in for the
 	// activation at the next threshold window change.
 	expectedVersion := uint32(vbTopBits)
+
+	if prevNode != nil && prevNode.height+1 >= b.chainParams.BCDHeight {
+		expectedVersion |= uint32(vbForkBcd)
+	}
+
 	for id := 0; id < len(b.chainParams.Deployments); id++ {
 		deployment := &b.chainParams.Deployments[id]
 		cache := &b.deploymentCaches[id]
@@ -298,4 +305,8 @@ func (b *BlockChain) warnUnknownVersions(node *blockNode) error {
 	}
 
 	return nil
+}
+
+func BcdForkVersion() int32 {
+	return vbForkBcd
 }

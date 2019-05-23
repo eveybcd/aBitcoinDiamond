@@ -1625,6 +1625,17 @@ func (b *BlockChain) LocateHeaders(locator BlockLocator, hashStop *chainhash.Has
 	return headers
 }
 
+func (b *BlockChain) IsBcdBlock(header *wire.BlockHeader) (bool, error) {
+	height, err := b.BlockHeightByHash(&header.PrevBlock)
+	if err != nil {
+		return false, err
+	}
+	if header.Version&BcdForkVersion() != 0 && height+1 >= b.chainParams.BCDHeight {
+		return true, nil
+	}
+	return false, nil
+}
+
 // IndexManager provides a generic interface that the is called when blocks are
 // connected and disconnected to and from the tip of the main chain for the
 // purpose of supporting optional indexes.

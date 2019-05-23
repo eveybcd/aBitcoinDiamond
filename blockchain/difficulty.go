@@ -258,14 +258,25 @@ func (b *BlockChain) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 		return 0, AssertError("unable to obtain previous retarget block")
 	}
 
+	var targetTimeSpan, minRetargetTimespan, maxRetargetTimespan int64
+	if lastNode.height+1 > b.chainParams.BCDHeight {
+		targetTimeSpan = int64(b.chainParams.BCDTargetTimespan / time.Second)
+		minRetargetTimespan = targetTimeSpan / b.chainParams.BCDRetargetAdjustFactor
+		maxRetargetTimespan = targetTimeSpan * b.chainParams.BCDRetargetAdjustFactor
+	} else {
+		targetTimeSpan = int64(b.chainParams.TargetTimespan / time.Second)
+		minRetargetTimespan = b.minRetargetTimespan
+		maxRetargetTimespan = b.maxRetargetTimespan
+	}
+
 	// Limit the amount of adjustment that can occur to the previous
 	// difficulty.
 	actualTimespan := lastNode.timestamp - firstNode.timestamp
 	adjustedTimespan := actualTimespan
-	if actualTimespan < b.minRetargetTimespan {
-		adjustedTimespan = b.minRetargetTimespan
-	} else if actualTimespan > b.maxRetargetTimespan {
-		adjustedTimespan = b.maxRetargetTimespan
+	if actualTimespan < minRetargetTimespan {
+		adjustedTimespan = minRetargetTimespan
+	} else if actualTimespan > maxRetargetTimespan {
+		adjustedTimespan = maxRetargetTimespan
 	}
 
 	// Calculate new target difficulty as:
@@ -275,7 +286,6 @@ func (b *BlockChain) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 	// result.
 	oldTarget := CompactToBig(lastNode.bits)
 	newTarget := new(big.Int).Mul(oldTarget, big.NewInt(adjustedTimespan))
-	targetTimeSpan := int64(b.chainParams.TargetTimespan / time.Second)
 	newTarget.Div(newTarget, big.NewInt(targetTimeSpan))
 
 	// Limit new value to the proof of work limit.
@@ -294,7 +304,7 @@ func (b *BlockChain) calcNextRequiredDifficulty(lastNode *blockNode, newBlockTim
 	log.Debugf("Actual timespan %v, adjusted timespan %v, target timespan %v",
 		time.Duration(actualTimespan)*time.Second,
 		time.Duration(adjustedTimespan)*time.Second,
-		b.chainParams.TargetTimespan)
+		time.Duration(targetTimeSpan)*time.Second)
 
 	return newTargetBits, nil
 }

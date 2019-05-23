@@ -40,7 +40,7 @@ const (
 
 	// baseSubsidy is the starting subsidy amount for mined blocks.  This
 	// value is halved every SubsidyHalvingInterval blocks.
-	baseSubsidy = 50 * btcutil.SatoshiPerBitcoin
+	baseSubsidy = 50 * btcutil.SatoshiPerBitcoin * btcutil.CoinScale
 )
 
 var (
@@ -196,13 +196,17 @@ func CalcBlockSubsidy(height int32, chainParams *chaincfg.Params) int64 {
 		return baseSubsidy
 	}
 
+	if height == chainParams.BCDHeight {
+		return chainParams.BCDGenesisBlockReward
+	}
+
 	// Equivalent to: baseSubsidy / 2^(height/subsidyHalvingInterval)
 	return baseSubsidy >> uint(height/chainParams.SubsidyReductionInterval)
 }
 
 // CheckTransactionSanity performs some preliminary checks on a transaction to
 // ensure it is sane.  These checks are context free.
-func CheckTransactionSanity(tx *btcutil.Tx) error {
+func CheckTransactionSanity(tx *btcutil.Tx, isBcdBlock bool) error {
 	// A transaction must have at least one input.
 	msgTx := tx.MsgTx()
 	if len(msgTx.TxIn) == 0 {
@@ -294,6 +298,15 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 		}
 	}
 
+	if isBcdBlock && !IsCoinBase(tx) {
+		if msgTx.Version != wire.TxVersion {
+			return ruleError(ErrInvalidTxVersion, "transaction version is invalid")
+		}
+		if msgTx.PreBlockHash.IsEqual(&chainhash.Hash{}) {
+			return ruleError(ErrInvalidTxPreBlockHash, "transaction previous block hash is invalid")
+		}
+	}
+
 	return nil
 }
 
@@ -304,7 +317,7 @@ func CheckTransactionSanity(tx *btcutil.Tx) error {
 // The flags modify the behavior of this function as follows:
 //  - BFNoPoWCheck: The check to ensure the block hash is less than the target
 //    difficulty is not performed.
-func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags BehaviorFlags) error {
+func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags BehaviorFlags, isBcdBlock bool) error {
 	// The target difficulty must be larger than zero.
 	target := CompactToBig(header.Bits)
 	if target.Sign() <= 0 {
@@ -324,7 +337,7 @@ func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags Behavio
 	// to avoid proof of work checks is set.
 	if flags&BFNoPoWCheck != BFNoPoWCheck {
 		// The block hash must be less than the claimed target.
-		hash := header.BlockHash()
+		hash := header.BlockPowHash(isBcdBlock)
 		hashNum := HashToBig(&hash)
 		if hashNum.Cmp(target) > 0 {
 			str := fmt.Sprintf("block hash of %064x is higher than "+
@@ -339,8 +352,8 @@ func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags Behavio
 // CheckProofOfWork ensures the block header bits which indicate the target
 // difficulty is in min/max range and that the block hash is less than the
 // target difficulty as claimed.
-func CheckProofOfWork(block *btcutil.Block, powLimit *big.Int) error {
-	return checkProofOfWork(&block.MsgBlock().Header, powLimit, BFNone)
+func CheckProofOfWork(block *btcutil.Block, powLimit *big.Int, isBcdBlock bool) error {
+	return checkProofOfWork(&block.MsgBlock().Header, powLimit, BFNone, isBcdBlock)
 }
 
 // CountSigOps returns the number of signature operations for all transaction
@@ -427,11 +440,11 @@ func CountP2SHSigOps(tx *btcutil.Tx, isCoinBaseTx bool, utxoView *UtxoViewpoint)
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkProofOfWork.
-func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
+func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags, isBcdBlock bool) error {
 	// Ensure the proof of work bits in the block header is in min/max range
 	// and the block hash is less than the target value described by the
 	// bits.
-	err := checkProofOfWork(header, powLimit, flags)
+	err := checkProofOfWork(header, powLimit, flags, isBcdBlock)
 	if err != nil {
 		return err
 	}
@@ -464,10 +477,10 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSou
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
+func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags, isBcdBlock bool) error {
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
-	err := checkBlockHeaderSanity(header, powLimit, timeSource, flags)
+	err := checkBlockHeaderSanity(header, powLimit, timeSource, flags, isBcdBlock)
 	if err != nil {
 		return err
 	}
@@ -515,7 +528,7 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
 	for _, tx := range transactions {
-		err := CheckTransactionSanity(tx)
+		err := CheckTransactionSanity(tx, isBcdBlock)
 		if err != nil {
 			return err
 		}
@@ -571,8 +584,8 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
-func CheckBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource) error {
-	return checkBlockSanity(block, powLimit, timeSource, BFNone)
+func CheckBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource, isBcdBlock bool) error {
+	return checkBlockSanity(block, powLimit, timeSource, BFNone, isBcdBlock)
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
@@ -702,7 +715,8 @@ func (b *BlockChain) checkBlockHeaderContext(header *wire.BlockHeader, prevNode 
 	params := b.chainParams
 	if header.Version < 2 && blockHeight >= params.BIP0034Height ||
 		header.Version < 3 && blockHeight >= params.BIP0066Height ||
-		header.Version < 4 && blockHeight >= params.BIP0065Height {
+		header.Version < 4 && blockHeight >= params.BIP0065Height ||
+		((header.Version&BcdForkVersion() == 0) && blockHeight >= params.BCDHeight) {
 
 		str := "new blocks with version %d are no longer valid"
 		str = fmt.Sprintf(str, header.Version)
@@ -1260,7 +1274,12 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 		return ruleError(ErrPrevBlockNotBest, str)
 	}
 
-	err := checkBlockSanity(block, b.chainParams.PowLimit, b.timeSource, flags)
+	isBcdBlock, err := b.IsBcdBlock(&block.MsgBlock().Header)
+	if err != nil {
+		return err
+	}
+
+	err = checkBlockSanity(block, b.chainParams.PowLimit, b.timeSource, flags, isBcdBlock)
 	if err != nil {
 		return err
 	}
