@@ -481,7 +481,7 @@ var TestNet3Params = Params{
 		{800010, newHashFromStr("000000000017ed35296433190b6829db01e657d80631d43f5983fa403bfdb4c1")},
 		{900000, newHashFromStr("0000000000356f8d8924556e765b7a94aaebc6b5c8685dcfa2b1ee8b41acd89b")},
 		{1000007, newHashFromStr("00000000001ccb893d8a1f25b70ad173ce955e5f50124261bbbc50379a612ddf")},
-		{1065121, newHashFromStr("0x890f1ad9a143da58806298072ad6d66e7a6086c7e6629265c9efb649630baa1c")},
+		{1065121, newHashFromStr("890f1ad9a143da58806298072ad6d66e7a6086c7e6629265c9efb649630baa1c")},
 	},
 
 	// Consensus rule change deployments.
