@@ -28,5 +28,7 @@ autotest: ## build autotest binary
 		&& cd build/autotest && bash ./copy-autotest.sh local && cd local && bash ./local-autotest.sh $(dapp) && cd ../../../; fi
 
 
-clean:
 
+clean:
+	@rm -rf build
+	@go clean
