@@ -417,9 +417,11 @@ func (msg *MsgTx) BtcDecode(r io.Reader, pver uint32, enc MessageEncoding) error
 	}
 	msg.Version = int32(version)
 
-	_, err = io.ReadFull(r, msg.PreBlockHash[:])
-	if err != nil {
-		return err
+	if msg.Version == TxVersion {
+		_, err = io.ReadFull(r, msg.PreBlockHash[:])
+		if err != nil {
+			return err
+		}
 	}
 
 	count, err := ReadVarInt(r, pver)
@@ -691,9 +693,11 @@ func (msg *MsgTx) BtcEncode(w io.Writer, pver uint32, enc MessageEncoding) error
 		return err
 	}
 
-	_, err = w.Write(msg.PreBlockHash[:])
-	if err != nil {
-		return err
+	if msg.Version == TxVersion {
+		_, err = w.Write(msg.PreBlockHash[:])
+		if err != nil {
+			return err
+		}
 	}
 
 	// If the encoding version is set to WitnessEncoding, and the Flags
