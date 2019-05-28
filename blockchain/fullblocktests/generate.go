@@ -342,7 +342,8 @@ func solveBlock(header *wire.BlockHeader) bool {
 				return
 			default:
 				hdr.Nonce = i
-				hash := hdr.BlockHash()
+				isBcdBlock := hdr.Version&blockchain.BcdForkVersion() == blockchain.BcdForkVersion()
+				hash := hdr.BlockPowHash(isBcdBlock)
 				if blockchain.HashToBig(&hash).Cmp(
 					targetDifficulty) <= 0 {
 
@@ -436,7 +437,7 @@ func additionalTx(tx *wire.MsgTx) func(*wire.MsgBlock) {
 // script which avoids the need to track addresses and signature scripts in the
 // tests.
 func createSpendTx(spend *spendableOut, fee btcutil.Amount) *wire.MsgTx {
-	spendTx := wire.NewMsgTx(1)
+	spendTx := wire.NewMsgTx(wire.TxVersion)
 	spendTx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: spend.prevOut,
 		Sequence:         wire.MaxTxInSequenceNum,
@@ -510,7 +511,7 @@ func (g *testGenerator) nextBlock(blockName string, spend *spendableOut, mungers
 
 	block := wire.MsgBlock{
 		Header: wire.BlockHeader{
-			Version:    1,
+			Version:    0x60000000,
 			PrevBlock:  g.tip.BlockHash(),
 			MerkleRoot: calcMerkleRoot(txns),
 			Bits:       g.params.PowLimitBits,
@@ -700,7 +701,7 @@ func (g *testGenerator) assertTipBlockSigOpsCount(expected int) {
 	}
 }
 
-// assertTipBlockSize panics if the if the current tip block associated with the
+// assertTipBlockSize panics if the current tip block associated with the
 // generator does not have the specified size when serialized.
 func (g *testGenerator) assertTipBlockSize(expected int) {
 	serializeSize := g.tip.SerializeSize()
@@ -711,7 +712,7 @@ func (g *testGenerator) assertTipBlockSize(expected int) {
 	}
 }
 
-// assertTipNonCanonicalBlockSize panics if the if the current tip block
+// assertTipNonCanonicalBlockSize panics if the current tip block
 // associated with the generator does not have the specified non-canonical size
 // when serialized.
 func (g *testGenerator) assertTipNonCanonicalBlockSize(expected int) {

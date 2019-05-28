@@ -1626,11 +1626,11 @@ func (b *BlockChain) LocateHeaders(locator BlockLocator, hashStop *chainhash.Has
 }
 
 func (b *BlockChain) IsBcdBlock(header *wire.BlockHeader) (bool, error) {
-	height, err := b.BlockHeightByHash(&header.PrevBlock)
-	if err != nil {
-		return false, err
-	}
-	if header.Version&BcdForkVersion() != 0 && height+1 >= b.chainParams.BCDHeight {
+	//height, err := b.BlockHeightByHash(&header.PrevBlock)
+	//if err != nil {
+	//	return false, err
+	//}
+	if header.Version&BcdForkVersion() == BcdForkVersion() {
 		return true, nil
 	}
 	return false, nil

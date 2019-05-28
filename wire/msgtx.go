@@ -803,10 +803,15 @@ func (msg *MsgTx) SerializeNoWitness(w io.Writer) error {
 // baseSize returns the serialized size of the transaction without accounting
 // for any witness data.
 func (msg *MsgTx) baseSize() int {
-	// Version 4 bytes + PreBlockHash 32 bytes + LockTime 4 bytes + Serialized
+	// Version 4 bytes + LockTime 4 bytes + Serialized
 	// varint size for the number of transaction inputs and outputs.
-	n := 40 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
+	n := 8 + VarIntSerializeSize(uint64(len(msg.TxIn))) +
 		VarIntSerializeSize(uint64(len(msg.TxOut)))
+
+	// PreBlockHash
+	if msg.Version == TxVersion {
+		n += 32
+	}
 
 	for _, txIn := range msg.TxIn {
 		n += txIn.SerializeSize()
@@ -907,9 +912,10 @@ func (msg *MsgTx) PkScriptLocs() []int {
 // future.
 func NewMsgTx(version int32) *MsgTx {
 	return &MsgTx{
-		Version: version,
-		TxIn:    make([]*TxIn, 0, defaultTxInOutAlloc),
-		TxOut:   make([]*TxOut, 0, defaultTxInOutAlloc),
+		Version:      version,
+		PreBlockHash: chainhash.Hash{1},
+		TxIn:         make([]*TxIn, 0, defaultTxInOutAlloc),
+		TxOut:        make([]*TxOut, 0, defaultTxInOutAlloc),
 	}
 }
 
