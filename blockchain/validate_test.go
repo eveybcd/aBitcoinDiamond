@@ -155,28 +155,23 @@ func TestCheckBlockSanity(t *testing.T) {
 	powLimit := chaincfg.MainNetParams.PowLimit
 	block := btcutil.NewBlock(&Block100000)
 	timeSource := NewMedianTime()
-	err := CheckBlockSanity(block, powLimit, timeSource, false)
+	err := CheckBlockSanity(block, powLimit, timeSource)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
-	}
-
-	err = CheckBlockSanity(block, powLimit, timeSource, true)
-	if err == nil {
-		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
 
 	// Ensure a block that has a timestamp with a precision higher than one
 	// second fails.
 	timestamp := block.MsgBlock().Header.Timestamp
 	block.MsgBlock().Header.Timestamp = timestamp.Add(time.Nanosecond)
-	err = CheckBlockSanity(block, powLimit, timeSource, false)
+	err = CheckBlockSanity(block, powLimit, timeSource)
 	if err == nil {
 		t.Errorf("CheckBlockSanity: error is nil when it shouldn't be")
 	}
 
 	powLimit = chaincfg.MainNetParams.BCDPowLimit
 	block = btcutil.NewBlock(&Block568907)
-	err = CheckBlockSanity(block, powLimit, timeSource, true)
+	err = CheckBlockSanity(block, powLimit, timeSource)
 	if err != nil {
 		t.Errorf("CheckBlockSanity: %v", err)
 	}
@@ -516,42 +511,42 @@ func hexStr2Hash(hexStr string) chainhash.Hash {
 
 var Block568907 = wire.MsgBlock{
 	Header: wire.BlockHeader{
-		Version: 0x60000000,
-		PrevBlock: hexStr2Hash("f7ae45595de3e92f1402b12c0523cdfe751993df36fdd17afba62f32772e5c08"),
+		Version:    0x60000000,
+		PrevBlock:  hexStr2Hash("f7ae45595de3e92f1402b12c0523cdfe751993df36fdd17afba62f32772e5c08"),
 		MerkleRoot: hexStr2Hash("d50b4e053aab06fded4c46fd3d55d6d9c81e1a198c3fc6f3fd20c3eb8252bece"),
-		Timestamp: time.Unix(1558680033, 0),
-		Bits: 0x1a31384f,
-		Nonce: 2186092713,
+		Timestamp:  time.Unix(1558680033, 0),
+		Bits:       0x1a31384f,
+		Nonce:      2186092713,
 	},
 	Transactions: []*wire.MsgTx{
 		{
-			Version: 1,
-			PreBlockHash:hexStr2Hash("f7ae45595de3e92f1402b12c0523cdfe751993df36fdd17afba62f32772e5c08"),
+			Version:      1,
+			PreBlockHash: hexStr2Hash("f7ae45595de3e92f1402b12c0523cdfe751993df36fdd17afba62f32772e5c08"),
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						Hash: chainhash.Hash{},
+						Hash:  chainhash.Hash{},
 						Index: 0xffffffff,
 					},
 					SignatureScript: hexStr2Byte("034bae0804e191e75c008f60b9932f0200000c2f4d696e696e67436f72652f"),
-					Sequence: 0,
+					Sequence:        0,
 				},
 			},
 			TxOut: []*wire.TxOut{
 				{
-					Value: 1250000787,
+					Value:    1250000787,
 					PkScript: hexStr2Byte("76a9142acf1113cf4f90c95a12a889475a975346c91f7588ac"),
 				},
 			},
 			LockTime: 0,
 		},
 		{
-			Version: wire.TxVersion,
-			PreBlockHash:hexStr2Hash("f7ae45595de3e92f1402b12c0523cdfe751993df36fdd17afba62f32772e5c08"),
+			Version:      wire.TxVersion,
+			PreBlockHash: hexStr2Hash("f7ae45595de3e92f1402b12c0523cdfe751993df36fdd17afba62f32772e5c08"),
 			TxIn: []*wire.TxIn{
 				{
 					PreviousOutPoint: wire.OutPoint{
-						Hash: hexStr2Hash("62e4e1ea72e76e12bb42b7af09b7710e02524236cdc8e08f10741c796d781ddf"),
+						Hash:  hexStr2Hash("62e4e1ea72e76e12bb42b7af09b7710e02524236cdc8e08f10741c796d781ddf"),
 						Index: 0,
 					},
 					SignatureScript: hexStr2Byte("47304402204aa921b4d8083be9f21895fc2bbfe7b1a8f474f0f3956dd24df" +
@@ -562,11 +557,11 @@ var Block568907 = wire.MsgBlock{
 			},
 			TxOut: []*wire.TxOut{
 				{
-					Value: 39998475,
+					Value:    39998475,
 					PkScript: hexStr2Byte("76a91486af5c1d5e754fc8906ec3c5d26e0135e1cb7c8588ac"),
 				},
 				{
-					Value: 20000738,
+					Value:    20000738,
 					PkScript: hexStr2Byte("a9149f6ad30244a99574ccb5cfaf39561080fa46eeae87"),
 				},
 			},

@@ -317,7 +317,7 @@ func CheckTransactionSanity(tx *btcutil.Tx, isBcdBlock bool) error {
 // The flags modify the behavior of this function as follows:
 //  - BFNoPoWCheck: The check to ensure the block hash is less than the target
 //    difficulty is not performed.
-func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags BehaviorFlags, isBcdBlock bool) error {
+func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags BehaviorFlags) error {
 	// The target difficulty must be larger than zero.
 	target := CompactToBig(header.Bits)
 	if target.Sign() <= 0 {
@@ -337,6 +337,7 @@ func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags Behavio
 	// to avoid proof of work checks is set.
 	if flags&BFNoPoWCheck != BFNoPoWCheck {
 		// The block hash must be less than the claimed target.
+		isBcdBlock := header.Version&BcdForkVersion() == BcdForkVersion()
 		hash := header.BlockPowHash(isBcdBlock)
 		hashNum := HashToBig(&hash)
 		if hashNum.Cmp(target) > 0 {
@@ -352,8 +353,8 @@ func checkProofOfWork(header *wire.BlockHeader, powLimit *big.Int, flags Behavio
 // CheckProofOfWork ensures the block header bits which indicate the target
 // difficulty is in min/max range and that the block hash is less than the
 // target difficulty as claimed.
-func CheckProofOfWork(block *btcutil.Block, powLimit *big.Int, isBcdBlock bool) error {
-	return checkProofOfWork(&block.MsgBlock().Header, powLimit, BFNone, isBcdBlock)
+func CheckProofOfWork(block *btcutil.Block, powLimit *big.Int) error {
+	return checkProofOfWork(&block.MsgBlock().Header, powLimit, BFNone)
 }
 
 // CountSigOps returns the number of signature operations for all transaction
@@ -440,11 +441,11 @@ func CountP2SHSigOps(tx *btcutil.Tx, isCoinBaseTx bool, utxoView *UtxoViewpoint)
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkProofOfWork.
-func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags, isBcdBlock bool) error {
+func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
 	// Ensure the proof of work bits in the block header is in min/max range
 	// and the block hash is less than the target value described by the
 	// bits.
-	err := checkProofOfWork(header, powLimit, flags, isBcdBlock)
+	err := checkProofOfWork(header, powLimit, flags)
 	if err != nil {
 		return err
 	}
@@ -477,10 +478,10 @@ func checkBlockHeaderSanity(header *wire.BlockHeader, powLimit *big.Int, timeSou
 //
 // The flags do not modify the behavior of this function directly, however they
 // are needed to pass along to checkBlockHeaderSanity.
-func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags, isBcdBlock bool) error {
+func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource, flags BehaviorFlags) error {
 	msgBlock := block.MsgBlock()
 	header := &msgBlock.Header
-	err := checkBlockHeaderSanity(header, powLimit, timeSource, flags, isBcdBlock)
+	err := checkBlockHeaderSanity(header, powLimit, timeSource, flags)
 	if err != nil {
 		return err
 	}
@@ -528,6 +529,7 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 	// Do some preliminary checks on each transaction to ensure they are
 	// sane before continuing.
 	for _, tx := range transactions {
+		isBcdBlock := block.MsgBlock().Header.Version&BcdForkVersion() == BcdForkVersion()
 		err := CheckTransactionSanity(tx, isBcdBlock)
 		if err != nil {
 			return err
@@ -584,8 +586,8 @@ func checkBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource Median
 
 // CheckBlockSanity performs some preliminary checks on a block to ensure it is
 // sane before continuing with block processing.  These checks are context free.
-func CheckBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource, isBcdBlock bool) error {
-	return checkBlockSanity(block, powLimit, timeSource, BFNone, isBcdBlock)
+func CheckBlockSanity(block *btcutil.Block, powLimit *big.Int, timeSource MedianTimeSource) error {
+	return checkBlockSanity(block, powLimit, timeSource, BFNone)
 }
 
 // ExtractCoinbaseHeight attempts to extract the height of the block from the
@@ -1274,12 +1276,7 @@ func (b *BlockChain) CheckConnectBlockTemplate(block *btcutil.Block) error {
 		return ruleError(ErrPrevBlockNotBest, str)
 	}
 
-	isBcdBlock, err := b.IsBcdBlock(&block.MsgBlock().Header)
-	if err != nil {
-		return err
-	}
-
-	err = checkBlockSanity(block, b.chainParams.PowLimit, b.timeSource, flags, isBcdBlock)
+	err := checkBlockSanity(block, b.chainParams.PowLimit, b.timeSource, flags)
 	if err != nil {
 		return err
 	}
