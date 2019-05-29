@@ -30,8 +30,8 @@ import (
 const (
 	// Intentionally defined here rather than using constants from codebase
 	// to ensure consensus changes are detected.
-	maxBlockSigOps       = 20000
-	maxBlockSize         = 1000000
+	maxBlockSigOps       = 20000 * 8
+	maxBlockSize         = 1000000 * 8
 	minCoinbaseScriptLen = 2
 	maxCoinbaseScriptLen = 100
 	medianTimeBlocks     = 11
