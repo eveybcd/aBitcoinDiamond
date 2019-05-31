@@ -453,6 +453,10 @@ func calcWitnessSignatureHash(subScript []parsedOpcode, sigHashes *TxSigHashes,
 	binary.LittleEndian.PutUint32(bVersion[:], uint32(tx.Version))
 	sigHash.Write(bVersion[:])
 
+	if tx.Version == wire.TxVersion {
+		sigHash.Write(tx.PreBlockHash[:])
+	}
+
 	// Next write out the possibly pre-calculated hashes for the sequence
 	// numbers of all inputs, and the hashes of the previous outs for all
 	// outputs.
@@ -564,10 +568,11 @@ func shallowCopyTx(tx *wire.MsgTx) wire.MsgTx {
 	// pointers into the contiguous arrays.  This avoids a lot of small
 	// allocations.
 	txCopy := wire.MsgTx{
-		Version:  tx.Version,
-		TxIn:     make([]*wire.TxIn, len(tx.TxIn)),
-		TxOut:    make([]*wire.TxOut, len(tx.TxOut)),
-		LockTime: tx.LockTime,
+		Version:      tx.Version,
+		PreBlockHash: tx.PreBlockHash,
+		TxIn:         make([]*wire.TxIn, len(tx.TxIn)),
+		TxOut:        make([]*wire.TxOut, len(tx.TxOut)),
+		LockTime:     tx.LockTime,
 	}
 	txIns := make([]wire.TxIn, len(tx.TxIn))
 	for i, oldTxIn := range tx.TxIn {

@@ -296,7 +296,7 @@ func parseExpectedResult(expected string) ([]ErrorCode, error) {
 func createSpendingTx(witness [][]byte, sigScript, pkScript []byte,
 	outputValue int64) *wire.MsgTx {
 
-	coinbaseTx := wire.NewMsgTx(wire.TxVersion)
+	coinbaseTx := wire.NewMsgTx(1)
 
 	outPoint := wire.NewOutPoint(&chainhash.Hash{}, ^uint32(0))
 	txIn := wire.NewTxIn(outPoint, []byte{OP_0, OP_0}, nil)
@@ -304,7 +304,7 @@ func createSpendingTx(witness [][]byte, sigScript, pkScript []byte,
 	coinbaseTx.AddTxIn(txIn)
 	coinbaseTx.AddTxOut(txOut)
 
-	spendingTx := wire.NewMsgTx(wire.TxVersion)
+	spendingTx := wire.NewMsgTx(1)
 	coinbaseTxSha := coinbaseTx.TxHash()
 	outPoint = wire.NewOutPoint(&coinbaseTxSha, 0)
 	txIn = wire.NewTxIn(outPoint, sigScript, witness)
