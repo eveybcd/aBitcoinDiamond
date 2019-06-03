@@ -1,7 +1,6 @@
 package score
 
 import (
-	"github.com/aBitcoinDiamond/slave"
 	"testing"
 	"time"
 
@@ -35,15 +34,15 @@ var (
 	item5      = &drivers.Item{Value: tx5, Priority: tx5.Fee, EnterTime: types.Now().Unix() - 1000}
 )
 
-func initEnv(size int64) *slave.Queue {
+func initEnv(size int64) *Queue {
 	if size == 0 {
 		size = 100
 	}
 	_, sub := types.InitCfg("chain33.test.toml")
-	var subcfg slave.subConfig
+	var subcfg subConfig
 	types.MustDecode(sub.Mempool["score"], &subcfg)
 	subcfg.PoolCacheSize = size
-	cache := slave.NewQueue(subcfg)
+	cache := NewQueue(subcfg)
 	return cache
 }
 

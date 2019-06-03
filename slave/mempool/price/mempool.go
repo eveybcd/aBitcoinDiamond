@@ -4,7 +4,6 @@ import (
 	"github.com/33cn/chain33/queue"
 	drivers "github.com/33cn/chain33/system/mempool"
 	"github.com/33cn/chain33/types"
-	"github.com/aBitcoinDiamond/slave"
 )
 
 //--------------------------------------------------------------------------------
@@ -30,6 +29,6 @@ func New(cfg *types.Mempool, sub []byte) queue.Module {
 	if subcfg.ProperFee == 0 {
 		subcfg.ProperFee = cfg.MinTxFee
 	}
-	c.SetQueueCache(slave.NewQueue(subcfg))
+	c.SetQueueCache(NewQueue(subcfg))
 	return c
 }

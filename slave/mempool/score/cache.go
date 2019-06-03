@@ -1,7 +1,6 @@
 package score
 
 import (
-	"github.com/aBitcoinDiamond/slave"
 	"time"
 
 	"github.com/33cn/chain33/common/skiplist"
@@ -15,11 +14,11 @@ var mempoolDupResendInterval int64 = 600 // mempool内交易过期时间，10分
 type Queue struct {
 	txMap     map[string]*skiplist.SkipValue
 	txList    *skiplist.SkipList
-	subConfig slave.subConfig
+	subConfig subConfig
 }
 
 // NewQueue 创建队列
-func NewQueue(subcfg slave.subConfig) *Queue {
+func NewQueue(subcfg subConfig) *Queue {
 	return &Queue{
 		txMap:     make(map[string]*skiplist.SkipValue, subcfg.PoolCacheSize),
 		txList:    skiplist.NewSkipList(&skiplist.SkipValue{Score: -1, Value: nil}),
