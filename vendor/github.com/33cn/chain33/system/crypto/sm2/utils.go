@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"math/big"
 
-	"github.com/btcsuite/btcd/btcec"
+	"github.com/aBitcoinDiamond/btcec"
 	"github.com/tjfoc/gmsm/sm2"
 )
 
