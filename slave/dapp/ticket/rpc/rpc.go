@@ -10,7 +10,7 @@ import (
 	rpctypes "github.com/33cn/chain33/rpc/types"
 	"github.com/33cn/chain33/types"
 	ty "github.com/aBitcoinDiamond/slave/dapp/ticket/types"
-	"golang.org/x/net/context"
+	context "golang.org/x/net/context"
 )
 
 func bindMiner(param *ty.ReqBindMiner) (*ty.ReplyBindMiner, error) {
