@@ -10,7 +10,7 @@ import (
 	"github.com/33cn/chain33/types"
 	"github.com/33cn/chain33/util"
 
-	node "github.com/aBitcoinDiamond/slave/dapp/paracross/testnode"
+	node "github.com/aBitcoinDiamond/slave/executor/paracross/testnode"
 	"github.com/stretchr/testify/assert"
 )
 

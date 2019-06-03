@@ -12,8 +12,8 @@ import (
 	"github.com/33cn/chain33/common"
 	"github.com/33cn/chain33/common/crypto"
 	"github.com/33cn/chain33/types"
-	paracross "github.com/aBitcoinDiamond/slave/dapp/paracross/types"
-	pt "github.com/aBitcoinDiamond/slave/dapp/paracross/types"
+	paracross "github.com/aBitcoinDiamond/slave/executor/paracross/types"
+	pt "github.com/aBitcoinDiamond/slave/executor/paracross/types"
 	"github.com/pkg/errors"
 )
 

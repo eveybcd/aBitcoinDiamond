@@ -17,9 +17,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 
-	//_ "github.com/aBitcoinDiamond/slave/dapp/paracross"
-	pp "github.com/aBitcoinDiamond/slave/dapp/paracross/executor"
-	//"github.com/aBitcoinDiamond/slave/dapp/paracross/rpc"
+	//_ "github.com/aBitcoinDiamond/slave/executor/paracross"
+	pp "github.com/aBitcoinDiamond/slave/executor/paracross/executor"
+	//"github.com/aBitcoinDiamond/slave/executor/paracross/rpc"
 	"time"
 
 	"github.com/33cn/chain33/queue"
@@ -27,7 +27,7 @@ import (
 	_ "github.com/33cn/chain33/system"
 	"github.com/33cn/chain33/types"
 	typesmocks "github.com/33cn/chain33/types/mocks"
-	pt "github.com/aBitcoinDiamond/slave/dapp/paracross/types"
+	pt "github.com/aBitcoinDiamond/slave/executor/paracross/types"
 )
 
 var random *rand.Rand
@@ -54,7 +54,7 @@ type suiteParaCommitMsg struct {
 }
 
 func initConfigFile() (*types.Config, *types.ConfigSubModule) {
-	cfg, sub := types.InitCfg("../../../plugin/dapp/paracross/cmd/build/chain33.para.test.toml")
+	cfg, sub := types.InitCfg("../../../plugin/executor/paracross/cmd/build/chain33.para.test.toml")
 	return cfg, sub
 }
 

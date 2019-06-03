@@ -23,7 +23,7 @@ import (
 	driver "github.com/33cn/chain33/system/dapp"
 	cty "github.com/33cn/chain33/system/dapp/coins/types"
 	"github.com/33cn/chain33/types"
-	ty "github.com/aBitcoinDiamond/slave/dapp/ticket/types"
+	ty "github.com/aBitcoinDiamond/slave/executor/ticket/types"
 	"github.com/golang/protobuf/proto"
 )
 

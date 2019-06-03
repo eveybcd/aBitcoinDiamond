@@ -25,7 +25,7 @@ import (
 	_ "github.com/33cn/chain33/system"
 	"github.com/33cn/chain33/types"
 	typesmocks "github.com/33cn/chain33/types/mocks"
-	pt "github.com/aBitcoinDiamond/slave/dapp/paracross/types"
+	pt "github.com/aBitcoinDiamond/slave/executor/paracross/types"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -171,7 +171,7 @@ func (s *suiteParaClient) createBlock() {
 }
 
 func (s *suiteParaClient) SetupSuite() {
-	s.initEnv(types.InitCfg("../../../plugin/dapp/paracross/cmd/build/chain33.para.test.toml"))
+	s.initEnv(types.InitCfg("../../../plugin/executor/paracross/cmd/build/chain33.para.test.toml"))
 }
 
 func testRunSuiteParaClient(t *testing.T) {

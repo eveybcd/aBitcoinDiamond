@@ -6,7 +6,7 @@ import (
 
 	_ "github.com/aBitcoinDiamond/slave/consensus/init" //consensus init
 	_ "github.com/aBitcoinDiamond/slave/crypto/init"    //crypto init
-	_ "github.com/aBitcoinDiamond/slave/dapp/init"      //dapp init
+	_ "github.com/aBitcoinDiamond/slave/executor/init"  //executor init
 	_ "github.com/aBitcoinDiamond/slave/mempool/init"   //mempool init
 	_ "github.com/aBitcoinDiamond/slave/store/init"     //store init
 )

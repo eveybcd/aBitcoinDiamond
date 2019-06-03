@@ -25,9 +25,9 @@ import (
 	drivers "github.com/33cn/chain33/system/consensus"
 	cty "github.com/33cn/chain33/system/dapp/coins/types"
 	"github.com/33cn/chain33/types"
-	paraexec "github.com/aBitcoinDiamond/slave/dapp/paracross/executor"
-	paracross "github.com/aBitcoinDiamond/slave/dapp/paracross/types"
-	pt "github.com/aBitcoinDiamond/slave/dapp/paracross/types"
+	paraexec "github.com/aBitcoinDiamond/slave/executor/paracross/executor"
+	paracross "github.com/aBitcoinDiamond/slave/executor/paracross/types"
+	pt "github.com/aBitcoinDiamond/slave/executor/paracross/types"
 )
 
 const (

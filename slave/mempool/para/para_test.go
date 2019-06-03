@@ -6,7 +6,7 @@ import (
 	"github.com/33cn/chain33/types"
 	"github.com/33cn/chain33/util"
 	"github.com/33cn/chain33/util/testnode"
-	paratest "github.com/aBitcoinDiamond/slave/dapp/paracross/testnode"
+	paratest "github.com/aBitcoinDiamond/slave/executor/paracross/testnode"
 	"github.com/aBitcoinDiamond/slave/mempool/para"
 	"github.com/stretchr/testify/assert"
 

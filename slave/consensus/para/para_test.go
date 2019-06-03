@@ -17,8 +17,8 @@ import (
 	"github.com/33cn/chain33/common/crypto"
 	"github.com/33cn/chain33/types"
 	typesmocks "github.com/33cn/chain33/types/mocks"
-	paraexec "github.com/aBitcoinDiamond/slave/dapp/paracross/executor"
-	pt "github.com/aBitcoinDiamond/slave/dapp/paracross/types"
+	paraexec "github.com/aBitcoinDiamond/slave/executor/paracross/executor"
+	pt "github.com/aBitcoinDiamond/slave/executor/paracross/types"
 	"github.com/stretchr/testify/mock"
 )
 

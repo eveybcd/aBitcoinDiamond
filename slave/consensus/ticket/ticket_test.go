@@ -14,11 +14,11 @@ import (
 	"github.com/33cn/chain33/types"
 	"github.com/33cn/chain33/util"
 	"github.com/33cn/chain33/util/testnode"
-	ty "github.com/aBitcoinDiamond/slave/dapp/ticket/types"
+	ty "github.com/aBitcoinDiamond/slave/executor/ticket/types"
 	"github.com/stretchr/testify/assert"
 
 	_ "github.com/33cn/chain33/system"
-	_ "github.com/aBitcoinDiamond/slave/dapp/init"
+	_ "github.com/aBitcoinDiamond/slave/executor/init"
 	_ "github.com/aBitcoinDiamond/slave/store/init"
 )
 
