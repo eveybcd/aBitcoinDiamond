@@ -15,6 +15,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/aBitcoinDiamond/btcec"
+	"github.com/aBitcoinDiamond/chaincfg"
 	"github.com/aBitcoinDiamond/chaincfg/chainhash"
 	"github.com/aBitcoinDiamond/wire"
 	"github.com/btcsuite/btcutil"
@@ -314,6 +316,532 @@ func createSpendingTx(witness [][]byte, sigScript, pkScript []byte,
 	spendingTx.AddTxOut(txOut)
 
 	return spendingTx
+}
+
+func TestP2pk(t *testing.T) {
+	hashType := SigHashAll
+	inputAmount := int64(0)
+
+	key, err := btcec.NewPrivateKey(btcec.S256())
+	if err != nil {
+		t.Errorf("failed to make privKey: %v", err)
+	}
+
+	pk := (*btcec.PublicKey)(&key.PublicKey).
+		SerializeUncompressed()
+	address, err := btcutil.NewAddressPubKey(pk,
+		&chaincfg.TestNet3Params)
+	if err != nil {
+		t.Errorf("failed to make address: %v", err)
+	}
+
+	pkScript, err := PayToAddrScript(address)
+	if err != nil {
+		t.Errorf("failed to make pkscript: %v", err)
+	}
+	fmt.Println("pkScript 👉", hex.EncodeToString(pkScript))
+
+	coinbaseTx := wire.NewMsgTx(1)
+
+	outPoint := wire.NewOutPoint(&chainhash.Hash{}, ^uint32(0))
+	txIn := wire.NewTxIn(outPoint, []byte{OP_0, OP_0}, nil)
+	txOut := wire.NewTxOut(inputAmount, pkScript)
+	coinbaseTx.AddTxIn(txIn)
+	coinbaseTx.AddTxOut(txOut)
+
+	spendingTx := wire.NewMsgTx(1)
+	coinbaseTxSha := coinbaseTx.TxHash()
+	outPoint = wire.NewOutPoint(&coinbaseTxSha, 0)
+	txIn = wire.NewTxIn(outPoint, nil, nil)
+	txOut = wire.NewTxOut(inputAmount, nil)
+
+	spendingTx.AddTxIn(txIn)
+	spendingTx.AddTxOut(txOut)
+
+	sigScript, err := SignTxOutput(&chaincfg.TestNet3Params, spendingTx, 0,
+		pkScript, hashType, mkGetKey(map[string]addressToKey{
+			address.EncodeAddress(): {key, false},
+		}), mkGetScript(nil), nil)
+	if err != nil {
+		t.Errorf("failed to sign output: %v", err)
+	}
+	fmt.Println("sigScript 👉", hex.EncodeToString(sigScript))
+}
+
+func TestP2sh(t *testing.T) {
+	hashType := SigHashAll
+	inputAmount := int64(0)
+
+	key, err := btcec.NewPrivateKey(btcec.S256())
+	if err != nil {
+		t.Errorf("failed to make privKey: %v", err)
+	}
+
+	pk := (*btcec.PublicKey)(&key.PublicKey).
+		SerializeCompressed()
+	address, err := btcutil.NewAddressPubKey(pk,
+		&chaincfg.TestNet3Params)
+	if err != nil {
+		t.Errorf("failed to make address: %v", err)
+	}
+
+	pkScript, err := PayToAddrScript(address)
+	if err != nil {
+		t.Errorf("failed to make pkscript: %v", err)
+	}
+	fmt.Println("pkScript 👉", hex.EncodeToString(pkScript))
+
+	scriptAddr, _ := btcutil.NewAddressScriptHash(pkScript, &chaincfg.TestNet3Params)
+	if err != nil {
+		t.Errorf("failed to make p2sh addr: %v", err)
+	}
+
+	scriptPkScript, err := PayToAddrScript(scriptAddr)
+	if err != nil {
+		t.Errorf("failed to make pkscript: %v", err)
+	}
+	fmt.Println("p2sh Script 👉", hex.EncodeToString(scriptPkScript))
+
+	coinbaseTx := wire.NewMsgTx(1)
+
+	outPoint := wire.NewOutPoint(&chainhash.Hash{}, ^uint32(0))
+	txIn := wire.NewTxIn(outPoint, []byte{OP_0, OP_0}, nil)
+	txOut := wire.NewTxOut(inputAmount, scriptPkScript)
+	coinbaseTx.AddTxIn(txIn)
+	coinbaseTx.AddTxOut(txOut)
+
+	spendingTx := wire.NewMsgTx(1)
+	coinbaseTxSha := coinbaseTx.TxHash()
+	outPoint = wire.NewOutPoint(&coinbaseTxSha, 0)
+	txIn = wire.NewTxIn(outPoint, nil, nil)
+	txOut = wire.NewTxOut(inputAmount, nil)
+
+	spendingTx.AddTxIn(txIn)
+	spendingTx.AddTxOut(txOut)
+
+	sigScript, err := SignTxOutput(&chaincfg.TestNet3Params, spendingTx, 0,
+		scriptPkScript, hashType,
+		mkGetKey(map[string]addressToKey{
+			address.EncodeAddress(): {key, true},
+		}),
+		mkGetScript(map[string][]byte{
+			scriptAddr.EncodeAddress(): pkScript,
+		}), nil)
+	if err != nil {
+		t.Errorf("failed to sign output: %v", err)
+	}
+	fmt.Println("sigScript 👉", hex.EncodeToString(sigScript))
+}
+
+func TestP2wpkh(t *testing.T) {
+	inputAmount, _ := btcutil.NewAmount(0.1)
+	isCompressed := true
+	flags := ScriptBip16 | ScriptVerifyWitness
+	key, _ := hex.DecodeString("68cb159a4f2e230139d13eb8da371e943e44e6fe43109125b7ab24a93b136ec5")
+	prvKey, pubKey := btcec.PrivKeyFromBytes(btcec.S256(), key)
+	netParam := &chaincfg.RegressionNetParams
+
+	var serPubKey []byte
+	if isCompressed {
+		serPubKey = pubKey.SerializeCompressed()
+	} else {
+		serPubKey = pubKey.SerializeUncompressed()
+	}
+
+	fmt.Println("private key:", hex.EncodeToString(prvKey.Serialize()))
+	fmt.Println("public key:", hex.EncodeToString(serPubKey))
+
+	// public key hash
+	pkh := btcutil.Hash160(serPubKey)
+	fmt.Println("pkh:", hex.EncodeToString(pkh))
+	// p2pkh address
+	pkhAddr, err := btcutil.NewAddressPubKeyHash(pkh, netParam)
+	if err != nil {
+		t.Errorf("failed to make pkhaddr: %v", err)
+	}
+	fmt.Println("pkhAddr:", pkhAddr)
+	//p2pkh script
+	p2pkhScript, err := PayToAddrScript(pkhAddr)
+	if err != nil {
+		t.Errorf("failed to make p2pkhScript: %v", err)
+	}
+	fmt.Println("p2pkhScript:", hex.EncodeToString(p2pkhScript))
+
+	// p2wkh address
+	p2wkhAddr, err := btcutil.NewAddressWitnessPubKeyHash(pkh, netParam)
+	if err != nil {
+		t.Errorf("failed to make p2wkhAddr: %v", err)
+	}
+	fmt.Println("p2wkhAddr:", p2wkhAddr)
+
+	// p2wkh script
+	witnessProgram, err := PayToAddrScript(p2wkhAddr)
+	if err != nil {
+		t.Errorf("failed to make witnessProgram")
+	}
+	fmt.Println("witnessProgram:", hex.EncodeToString(witnessProgram))
+
+	// pre tx
+	coinbaseTx := wire.NewMsgTx(1)
+	outPoint := wire.NewOutPoint(&chainhash.Hash{}, ^uint32(0))
+	txIn := wire.NewTxIn(outPoint, []byte{OP_0, OP_0}, nil)
+	txOut := wire.NewTxOut(int64(inputAmount), witnessProgram)
+	coinbaseTx.AddTxIn(txIn)
+	coinbaseTx.AddTxOut(txOut)
+
+	// tx
+	spendingTx := wire.NewMsgTx(1)
+	coinbaseTxSha := coinbaseTx.TxHash()
+	outPoint = wire.NewOutPoint(&coinbaseTxSha, 0)
+	txIn = wire.NewTxIn(outPoint, nil, nil)
+	txOut = wire.NewTxOut(int64(inputAmount), nil)
+	spendingTx.AddTxIn(txIn)
+	spendingTx.AddTxOut(txOut)
+
+	// witness
+	hashCache := NewTxSigHashes(spendingTx)
+	witnessScript, err := WitnessSignature(spendingTx, hashCache, 0,
+		int64(inputAmount), witnessProgram, SigHashAll, prvKey, isCompressed)
+	if err != nil {
+		t.Errorf("failed to sign output: %v", err)
+	}
+	fmt.Printf("witnessScript %v\n" +
+		"              %v\n",
+		hex.EncodeToString(witnessScript[0]), hex.EncodeToString(witnessScript[1]))
+
+	spendingTx.TxIn[0].Witness = witnessScript
+	sigCache := NewSigCache(10)
+	vm, err := NewEngine(witnessProgram, spendingTx, 0, flags, sigCache, nil,
+		int64(inputAmount))
+	if err == nil {
+		err = vm.Execute()
+	}
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+}
+
+func TestP2wsh(t *testing.T) {
+	inputAmount, _ := btcutil.NewAmount(0.1)
+	isCompressed := true
+	flags := ScriptBip16 | ScriptVerifyWitness
+	key, _ := hex.DecodeString("68cb159a4f2e230139d13eb8da371e943e44e6fe43109125b7ab24a93b136ec5")
+	prvKey, pubKey := btcec.PrivKeyFromBytes(btcec.S256(), key)
+	netParam := &chaincfg.RegressionNetParams
+
+	var serPubKey []byte
+	if isCompressed {
+		serPubKey = pubKey.SerializeCompressed()
+	} else {
+		serPubKey = pubKey.SerializeUncompressed()
+	}
+
+	fmt.Println("private key:", hex.EncodeToString(prvKey.Serialize()))
+	fmt.Println("public key:", hex.EncodeToString(serPubKey))
+
+	wif, err := btcutil.NewWIF(prvKey, netParam, isCompressed)
+	if err != nil {
+		t.Errorf("create wif failed: %v", err)
+	}
+	fmt.Println("wif:", wif.String())
+
+	address, err := btcutil.NewAddressPubKey(serPubKey, netParam)
+	if err != nil {
+		t.Errorf("failed to make address: %v", err)
+	}
+	pkScript, err := PayToAddrScript(address)
+	if err != nil {
+		t.Errorf("failed to make pkscript: %v", err)
+	}
+	fmt.Println("pkScript:", hex.EncodeToString(pkScript))
+
+	scriptHash := chainhash.HashB(pkScript)
+	fmt.Println("scriptHash:", hex.EncodeToString(scriptHash))
+
+	// p2wsh address
+	p2wshAddr, err := btcutil.NewAddressWitnessScriptHash(scriptHash, netParam)
+	if err != nil {
+		t.Errorf("failed to make p2wshAddr: %v", err)
+	}
+	fmt.Println("p2wshAddr:", p2wshAddr)
+	// witnessProgram
+	witnessProgram, err := PayToAddrScript(p2wshAddr)
+	if err != nil {
+		t.Errorf("failed to make witnessProgram")
+	}
+	fmt.Println("witnessProgram:", hex.EncodeToString(witnessProgram))
+
+
+	// pre tx
+	coinbaseTx := wire.NewMsgTx(1)
+	outPoint := wire.NewOutPoint(&chainhash.Hash{}, ^uint32(0))
+	txIn := wire.NewTxIn(outPoint, []byte{OP_0, OP_0}, nil)
+	txOut := wire.NewTxOut(int64(inputAmount), witnessProgram)
+	coinbaseTx.AddTxIn(txIn)
+	coinbaseTx.AddTxOut(txOut)
+	fmt.Println("preTxId:", coinbaseTx.TxHash().String())
+
+	// spend tx
+	spendingTx := wire.NewMsgTx(1)
+	coinbaseTxSha := coinbaseTx.TxHash()
+	outPoint = wire.NewOutPoint(&coinbaseTxSha, 0)
+	txIn = wire.NewTxIn(outPoint, nil, nil)
+	txOut = wire.NewTxOut(int64(inputAmount), nil)
+	spendingTx.AddTxIn(txIn)
+	spendingTx.AddTxOut(txOut)
+
+	// witness
+	hashCache := NewTxSigHashes(spendingTx)
+	witnessScript, err := WitnessSignature(spendingTx, hashCache, 0,
+		int64(inputAmount), pkScript, SigHashAll, prvKey, isCompressed)
+	if err != nil {
+		t.Errorf("failed to sign output: %v", err)
+	}
+	fmt.Printf("witnessScript %v\n" +
+		"              %v\n",
+		hex.EncodeToString(witnessScript[0]), hex.EncodeToString(witnessScript[1]))
+
+	witness := [][]byte{witnessScript[0], pkScript}
+	spendingTx.TxIn[0].Witness = witness
+	sigCache := NewSigCache(10)
+	vm, err := NewEngine(witnessProgram, spendingTx, 0, flags, sigCache, nil,
+		int64(inputAmount))
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+	err = vm.Execute()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+}
+
+func TestP2wshNestedInP2sh(t *testing.T) {
+	inputAmount, _ := btcutil.NewAmount(0.1)
+	isCompressed := true
+	flags := ScriptBip16 | ScriptVerifyWitness
+	key, _ := hex.DecodeString("68cb159a4f2e230139d13eb8da371e943e44e6fe43109125b7ab24a93b136ec5")
+	prvKey, pubKey := btcec.PrivKeyFromBytes(btcec.S256(), key)
+	netParam := &chaincfg.RegressionNetParams
+
+	var serPubKey []byte
+	if isCompressed {
+		serPubKey = pubKey.SerializeCompressed()
+	} else {
+		serPubKey = pubKey.SerializeUncompressed()
+	}
+
+	fmt.Println("private key:", hex.EncodeToString(prvKey.Serialize()))
+	fmt.Println("public key:", hex.EncodeToString(serPubKey))
+
+	wif, err := btcutil.NewWIF(prvKey, netParam, isCompressed)
+	if err != nil {
+		t.Errorf("create wif failed: %v", err)
+	}
+	fmt.Println("wif:", wif.String())
+
+	address, err := btcutil.NewAddressPubKey(serPubKey, netParam)
+	if err != nil {
+		t.Errorf("failed to make address: %v", err)
+	}
+	pkScript, err := PayToAddrScript(address)
+	if err != nil {
+		t.Errorf("failed to make pkscript: %v", err)
+	}
+	fmt.Println("pkScript:", hex.EncodeToString(pkScript))
+
+	scriptHash := chainhash.HashB(pkScript)
+	fmt.Println("scriptHash:", hex.EncodeToString(scriptHash))
+
+	// p2wsh address
+	p2wshAddr, err := btcutil.NewAddressWitnessScriptHash(scriptHash, netParam)
+	if err != nil {
+		t.Errorf("failed to make p2wshAddr: %v", err)
+	}
+	fmt.Println("p2wshAddr:", p2wshAddr)
+	// witnessProgram
+	witnessProgram, err := PayToAddrScript(p2wshAddr)
+	if err != nil {
+		t.Errorf("failed to make witnessProgram")
+	}
+	fmt.Println("witnessProgram:", hex.EncodeToString(witnessProgram))
+
+	//////////////////////////////////////////////////////
+	scriptAddr, _ := btcutil.NewAddressScriptHash(witnessProgram, netParam)
+	if err != nil {
+		t.Errorf("failed to make p2sh addr: %v", err)
+	}
+	fmt.Println("scriptAddr:", hex.EncodeToString(scriptAddr.ScriptAddress()))
+	scriptPubKey, err := PayToAddrScript(scriptAddr)
+	if err != nil {
+		t.Errorf("failed to make pkscript: %v", err)
+	}
+	fmt.Println("scriptPubKey:", hex.EncodeToString(scriptPubKey))
+	//////////////////////////////////////////////////////
+
+	// pre tx
+	coinbaseTx := wire.NewMsgTx(1)
+	outPoint := wire.NewOutPoint(&chainhash.Hash{}, ^uint32(0))
+	txIn := wire.NewTxIn(outPoint, []byte{OP_0, OP_0}, nil)
+	txOut := wire.NewTxOut(int64(inputAmount), scriptPubKey)
+	coinbaseTx.AddTxIn(txIn)
+	coinbaseTx.AddTxOut(txOut)
+	fmt.Println("preTxId:", coinbaseTx.TxHash().String())
+
+	// spend tx
+	spendingTx := wire.NewMsgTx(1)
+	coinbaseTxSha := coinbaseTx.TxHash()
+	outPoint = wire.NewOutPoint(&coinbaseTxSha, 0)
+	txIn = wire.NewTxIn(outPoint, nil, nil)
+	txOut = wire.NewTxOut(int64(inputAmount), nil)
+	spendingTx.AddTxIn(txIn)
+	spendingTx.AddTxOut(txOut)
+
+	// witness
+	hashCache := NewTxSigHashes(spendingTx)
+
+	scriptBuilder := NewScriptBuilder()
+	scriptBuilder.AddData(witnessProgram)
+	sigScript, err := scriptBuilder.Script()
+	if err != nil {
+		t.Errorf("failed to build script: %v", err)
+	}
+	fmt.Println("sigScript:", hex.EncodeToString(sigScript))
+	spendingTx.TxIn[0].SignatureScript = sigScript
+
+	witnessScript, err := WitnessSignature(spendingTx, hashCache, 0,
+		int64(inputAmount), pkScript, SigHashAll, prvKey, isCompressed)
+	if err != nil {
+		t.Errorf("failed to sign output: %v", err)
+	}
+	fmt.Printf("witnessScript %v\n" +
+		"              %v\n",
+		hex.EncodeToString(witnessScript[0]), hex.EncodeToString(witnessScript[1]))
+
+	witness := [][]byte{witnessScript[0], pkScript}
+	spendingTx.TxIn[0].Witness = witness
+
+	sigCache := NewSigCache(10)
+	vm, err := NewEngine(scriptPubKey, spendingTx, 0, flags, sigCache, nil, int64(inputAmount))
+	if err != nil {
+		t.Errorf("%v", err)
+		return
+	}
+	err = vm.Execute()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
+}
+
+func TestP2wpkhNestedInP2sh(t *testing.T) {
+	inputAmount, _ := btcutil.NewAmount(0.1)
+	isCompressed := true
+	flags := ScriptBip16 | ScriptVerifyWitness
+	key, _ := hex.DecodeString("68cb159a4f2e230139d13eb8da371e943e44e6fe43109125b7ab24a93b136ec5")
+	prvKey, pubKey := btcec.PrivKeyFromBytes(btcec.S256(), key)
+	netParam := &chaincfg.RegressionNetParams
+
+	var serPubKey []byte
+	if isCompressed {
+		serPubKey = pubKey.SerializeCompressed()
+	} else {
+		serPubKey = pubKey.SerializeUncompressed()
+	}
+
+	fmt.Println("private key:", hex.EncodeToString(prvKey.Serialize()))
+	fmt.Println("public key:", hex.EncodeToString(serPubKey))
+
+	// public key hash
+	pkh := btcutil.Hash160(serPubKey)
+	fmt.Println("pkh:", hex.EncodeToString(pkh))
+	// p2pkh address
+	pkhAddr, err := btcutil.NewAddressPubKeyHash(pkh, netParam)
+	if err != nil {
+		t.Errorf("failed to make pkhaddr: %v", err)
+	}
+	fmt.Println("pkhAddr:", pkhAddr)
+	//p2pkh script
+	p2pkhScript, err := PayToAddrScript(pkhAddr)
+	if err != nil {
+		t.Errorf("failed to make p2pkhScript: %v", err)
+	}
+	fmt.Println("p2pkhScript:", hex.EncodeToString(p2pkhScript))
+
+	// p2wkh address
+	p2wkhAddr, err := btcutil.NewAddressWitnessPubKeyHash(pkh, netParam)
+	if err != nil {
+		t.Errorf("failed to make p2wkhAddr: %v", err)
+	}
+	fmt.Println("p2wkhAddr:", p2wkhAddr)
+
+	// p2wkh script
+	witnessProgram, err := PayToAddrScript(p2wkhAddr)
+	if err != nil {
+		t.Errorf("failed to make witnessProgram")
+	}
+	fmt.Println("witnessProgram:", hex.EncodeToString(witnessProgram))
+
+	//////////////////////////////////////////////////////
+	scriptAddr, _ := btcutil.NewAddressScriptHash(witnessProgram, netParam)
+	if err != nil {
+		t.Errorf("failed to make p2sh addr: %v", err)
+	}
+	fmt.Println("scriptAddr:", hex.EncodeToString(scriptAddr.ScriptAddress()))
+	scriptPubKey, err := PayToAddrScript(scriptAddr)
+	if err != nil {
+		t.Errorf("failed to make pkscript: %v", err)
+	}
+	fmt.Println("scriptPubKey:", hex.EncodeToString(scriptPubKey))
+	//////////////////////////////////////////////////////
+
+	// pre tx
+	coinbaseTx := wire.NewMsgTx(1)
+	outPoint := wire.NewOutPoint(&chainhash.Hash{}, ^uint32(0))
+	txIn := wire.NewTxIn(outPoint, []byte{OP_0, OP_0}, nil)
+	txOut := wire.NewTxOut(int64(inputAmount), scriptPubKey)
+	coinbaseTx.AddTxIn(txIn)
+	coinbaseTx.AddTxOut(txOut)
+
+	// tx
+	spendingTx := wire.NewMsgTx(1)
+	coinbaseTxSha := coinbaseTx.TxHash()
+	outPoint = wire.NewOutPoint(&coinbaseTxSha, 0)
+	txIn = wire.NewTxIn(outPoint, nil, nil)
+	txOut = wire.NewTxOut(int64(inputAmount), nil)
+	spendingTx.AddTxIn(txIn)
+	spendingTx.AddTxOut(txOut)
+
+	// witness
+	hashCache := NewTxSigHashes(spendingTx)
+
+	scriptBuilder := NewScriptBuilder()
+	scriptBuilder.AddData(witnessProgram)
+	sigScript, err := scriptBuilder.Script()
+	if err != nil {
+		t.Errorf("failed to build script: %v", err)
+	}
+	fmt.Println("sigScript:", hex.EncodeToString(sigScript))
+	spendingTx.TxIn[0].SignatureScript = sigScript
+
+	witnessScript, err := WitnessSignature(spendingTx, hashCache, 0,
+		int64(inputAmount), witnessProgram, SigHashAll, prvKey, isCompressed)
+	if err != nil {
+		t.Errorf("failed to sign output: %v", err)
+	}
+	fmt.Printf("witnessScript %v\n" +
+		"              %v\n",
+		hex.EncodeToString(witnessScript[0]), hex.EncodeToString(witnessScript[1]))
+
+	spendingTx.TxIn[0].Witness = witnessScript
+	sigCache := NewSigCache(10)
+	vm, err := NewEngine(scriptPubKey, spendingTx, 0, flags, sigCache, nil, int64(inputAmount))
+	if err != nil {
+		t.Errorf("%v", err)
+		return
+	}
+	err = vm.Execute()
+	if err != nil {
+		t.Errorf("%v", err)
+	}
 }
 
 // scriptWithInputVal wraps a target pkScript with the value of the output in
