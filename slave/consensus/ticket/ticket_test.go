@@ -163,3 +163,9 @@ func Test_getNextRequiredDifficulty(t *testing.T) {
 	assert.Equal(t, bt, defaultModify)
 	assert.Equal(t, bits, types.GetP(0).PowLimitBits)
 }
+
+func Test_Miner(t *testing.T) {
+	c := &Client{}
+	ret := c.Miner(nil, nil)
+	assert.Equal(t, ret, nil)
+}
