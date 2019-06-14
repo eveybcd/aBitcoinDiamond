@@ -43,7 +43,8 @@ func solveBlock(header *wire.BlockHeader, targetDifficulty *big.Int) bool {
 				return
 			default:
 				hdr.Nonce = i
-				hash := hdr.BlockHash()
+				isBcdBlock := hdr.Version&blockchain.BcdForkVersion() == blockchain.BcdForkVersion()
+				hash := hdr.BlockPowHash(isBcdBlock)
 				if blockchain.HashToBig(&hash).Cmp(targetDifficulty) <= 0 {
 					select {
 					case results <- sbResult{true, i}:

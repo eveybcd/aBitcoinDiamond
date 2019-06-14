@@ -140,7 +140,7 @@ func TestBIP0113Activation(t *testing.T) {
 	// Now create a transaction with a lock time which is "final" according
 	// to the latest block, but not according to the current median time
 	// past.
-	tx := wire.NewMsgTx(1)
+	tx := wire.NewMsgTx(wire.TxVersion)
 	tx.AddTxIn(&wire.TxIn{
 		PreviousOutPoint: *testOutput,
 	})

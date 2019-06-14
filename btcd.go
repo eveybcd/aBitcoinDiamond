@@ -6,7 +6,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/aBitcoinDiamond/slave"
 	"net"
 	"net/http"
 	_ "net/http/pprof"
@@ -335,7 +334,7 @@ func startMaster() {
 
 func main() {
 	//start master chain
-	//startMaster()
+	startMaster()
 	//start slave chain
-	slave.StartSlave()
+	//slave.StartSlave()
 }

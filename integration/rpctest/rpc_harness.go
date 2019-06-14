@@ -33,7 +33,7 @@ const (
 
 	// BlockVersion is the default block version used when generating
 	// blocks.
-	BlockVersion = 4
+	BlockVersion = 0x40000000
 )
 
 var (
@@ -241,8 +241,7 @@ func (h *Harness) SetUp(createTestChain bool, numMatureOutputs uint32) error {
 	// Create a test chain with the desired number of mature coinbase
 	// outputs.
 	if createTestChain && numMatureOutputs != 0 {
-		numToGenerate := (uint32(h.ActiveNet.CoinbaseMaturity) +
-			numMatureOutputs)
+		numToGenerate := uint32(h.ActiveNet.CoinbaseMaturity) + numMatureOutputs
 		_, err := h.Node.Generate(numToGenerate)
 		if err != nil {
 			return err

@@ -371,7 +371,7 @@ func testGenerateAndSubmitBlock(r *Harness, t *testing.T) {
 	// Next generate a block with a "non-standard" block version along with
 	// time stamp a minute after the previous block's timestamp.
 	timestamp := block.MsgBlock().Header.Timestamp.Add(time.Minute)
-	targetBlockVersion := int32(1337)
+	targetBlockVersion := int32(1337) | 0x40000000
 	block, err = r.GenerateAndSubmitBlock(nil, targetBlockVersion, timestamp)
 	if err != nil {
 		t.Fatalf("unable to generate block: %v", err)
@@ -442,7 +442,7 @@ func testGenerateAndSubmitBlockWithCustomCoinbaseOutputs(r *Harness,
 	// Next generate a block with a "non-standard" block version along with
 	// time stamp a minute after the previous block's timestamp.
 	timestamp := block.MsgBlock().Header.Timestamp.Add(time.Minute)
-	targetBlockVersion := int32(1337)
+	targetBlockVersion := int32(1337) | 0x40000000
 	block, err = r.GenerateAndSubmitBlockWithCustomCoinbaseOutputs(nil,
 		targetBlockVersion, timestamp, []wire.TxOut{{
 			Value:    0,
@@ -479,7 +479,7 @@ func testMemWalletReorg(r *Harness, t *testing.T) {
 	defer harness.TearDown()
 
 	// The internal wallet of this harness should now have 250 BTC.
-	expectedBalance := btcutil.Amount(250 * btcutil.SatoshiPerBitcoin)
+	expectedBalance := btcutil.Amount(2500 * btcutil.SatoshiPerBitcoin)
 	walletBalance := harness.ConfirmedBalance()
 	if expectedBalance != walletBalance {
 		t.Fatalf("wallet balance incorrect: expected %v, got %v",
@@ -520,7 +520,7 @@ func testMemWalletLockedOutputs(r *Harness, t *testing.T) {
 	if err != nil {
 		t.Fatalf("unable to create script: %v", err)
 	}
-	outputAmt := btcutil.Amount(50 * btcutil.SatoshiPerBitcoin)
+	outputAmt := btcutil.Amount(500 * btcutil.SatoshiPerBitcoin)
 	output := wire.NewTxOut(int64(outputAmt), pkScript)
 	tx, err := r.CreateTransaction([]*wire.TxOut{output}, 10, true)
 	if err != nil {
