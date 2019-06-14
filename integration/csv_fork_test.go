@@ -235,7 +235,7 @@ func TestBIP0113Activation(t *testing.T) {
 
 		// Create a new transaction with a lock-time past the current known
 		// MTP.
-		tx = wire.NewMsgTx(1)
+		tx = wire.NewMsgTx(wire.TxVersion)
 		tx.AddTxIn(&wire.TxIn{
 			PreviousOutPoint: *testOutput,
 		})
@@ -462,7 +462,7 @@ func TestBIP0068AndBIP0112Activation(t *testing.T) {
 		// Generate a custom transaction which spends the CSV output.
 		sequenceNum := blockchain.LockTimeToSequence(false, 10)
 		spendingTx, err := spendCSVOutput(redeemScript, testUTXO,
-			sequenceNum, sweepOutput, txVersion)
+			sequenceNum, sweepOutput, wire.TxVersion)
 		if err != nil {
 			t.Fatalf("unable to spend csv output: %v", err)
 		}

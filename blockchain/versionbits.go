@@ -21,7 +21,7 @@ const (
 
 	// vbTopMask is the bitmask to use to determine whether or not the
 	// version bits scheme is in use.
-	vbTopMask = 0xe0000000
+	vbTopMask = 0xa0000000
 
 	// vbNumBits is the total number of bits available for use with the
 	// version bits scheme.
