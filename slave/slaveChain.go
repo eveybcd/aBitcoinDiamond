@@ -69,10 +69,6 @@ minerAddr="1M4ns1eGHdHak3SNc2UTQB75vnXyJQd91s"
 returnAddr="1Lw6QLShKVbKM6QvMaCQwTh5Uhmy4644CG"
 count=3000
 
-[[consensus.sub.ticket.genesis]]
-minerAddr="19ozyoUGPAQ9spsFiz9CJfnUCFeszpaFuF"
-returnAddr="1PSYYfCbtSeT1vJTvSKmQvhz8y6VhtddWi"
-count=3000
 
 [[consensus.sub.ticket.genesis]]
 minerAddr="1MoEnCDhXZ6Qv5fNDGYoW6MVEBTBK62HP2"
@@ -99,15 +95,6 @@ minerAddr="1EwkKd9iU1pL2ZwmRAC5RrBoqFD1aMrQ2"
 returnAddr="1ExRRLoJXa8LzXdNxnJvBkVNZpVw3QWMi4"
 count=3000
 
-[[consensus.sub.ticket.genesis]]
-minerAddr="1HFUhgxarjC7JLru1FLEY6aJbQvCSL58CB"
-returnAddr="1KNGHukhbBnbWWnMYxu1C7YMoCj45Z3amm"
-count=3000
-
-[[consensus.sub.ticket.genesis]]
-minerAddr="1C9M1RCv2e9b4GThN9ddBgyxAphqMgh5zq"
-returnAddr="1AH9HRd4WBJ824h9PP1jYpvRZ4BSA4oN6Y"
-count=4733
 
 [store]
 name="kvmvccmavl"
