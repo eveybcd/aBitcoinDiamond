@@ -84,6 +84,7 @@ type subConfig struct {
 	MainParaSelfConsensusForkHeight int64  `json:"mainParaSelfConsensusForkHeight,omitempty"`
 	MainForkParacrossCommitTx       int64  `json:"mainForkParacrossCommitTx,omitempty"`
 	MainForkParacrossCommitDeltaTx  int64  `json:"mainForkParacrossCommitDeltaTx,omitempty"`
+	SlaveForCommitDeltaTx           int64  `json:"mainBlockHashForkHeight,omitempty"`
 }
 
 // New function to init paracross env
@@ -126,6 +127,8 @@ func New(cfg *types.Consensus, sub []byte) queue.Module {
 	//delta TX for subchain
 	if subcfg.MainForkParacrossCommitDeltaTx > 0 {
 		mainForkParacrossCommitTx = subcfg.MainForkParacrossCommitDeltaTx
+	} else if subcfg.SlaveForCommitDeltaTx > 0 { //delta TX for slavechain
+		mainForkParacrossCommitTx = subcfg.SlaveForCommitDeltaTx
 	}
 
 	pk, err := hex.DecodeString(minerPrivateKey)
