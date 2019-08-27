@@ -2588,14 +2588,35 @@ func handleRescan(wsc *wsClient, icmd interface{}) (interface{}, error) {
 		}
 	}
 
-	// With all the arguments parsed, we'll execute our chunked rescan
-	// which will notify the clients of any address deposits or output
-	// spends.
-	lastBlock, lastBlockHash, err = scanBlockChunks(
-		wsc, cmd, &lookups, minBlock, maxBlock, chain,
+	var (
+		lastBlock     *btcutil.Block
+		lastBlockHash *chainhash.Hash
 	)
-	if err != nil {
-		return nil, err
+	if len(lookups.addrs) != 0 || len(lookups.unspent) != 0 {
+		// With all the arguments parsed, we'll execute our chunked rescan
+		// which will notify the clients of any address deposits or output
+		// spends.
+		lastBlock, lastBlockHash, err = scanBlockChunks(
+			wsc, cmd, &lookups, minBlock, maxBlock, chain,
+		)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		rpcsLog.Infof("Skipping rescan as client has no addrs/utxos")
+
+		// If we didn't actually do a rescan, then we'll give the
+		// client our best known block within the final rescan finished
+		// notification.
+		chainTip := chain.BestSnapshot()
+		lastBlockHash = &chainTip.Hash
+		lastBlock, err = chain.BlockByHash(lastBlockHash)
+		if err != nil {
+			return nil, &btcjson.RPCError{
+				Code:    btcjson.ErrRPCBlockNotFound,
+				Message: "Error getting block: " + err.Error(),
+			}
+		}
 	}
 
 	// Notify websocket client of the finished rescan.  Due to how btcd
