@@ -79,7 +79,7 @@ func (s *suiteParaCommitMsg) initEnv(cfg *types.Config, sub *types.ConfigSubModu
 
 	// GetBlockBySeq return error to stop create's for cycle to request tx
 	s.grpcCli.On("GetBlockBySeq", mock.Anything, mock.Anything).Return(nil, errors.New("quit create"))
-	//data := &types.Int64{1}
+
 	s.grpcCli.On("GetLastBlockSequence", mock.Anything, mock.Anything).Return(nil, errors.New("nil")).Maybe()
 	reply := &types.Reply{IsOk: true}
 	s.grpcCli.On("IsSync", mock.Anything, mock.Anything).Return(reply, nil)

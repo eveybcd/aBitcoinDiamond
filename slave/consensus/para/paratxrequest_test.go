@@ -30,7 +30,6 @@ import (
 )
 
 func init() {
-	//types.Init("user.p.para.", nil)
 	log.SetLogLevel("error")
 }
 
@@ -52,7 +51,6 @@ func (s *suiteParaClient) initEnv(cfg *types.Config, sub *types.ConfigSubModule)
 	s.createTempBlock()
 	q := queue.New("channel")
 	s.q = q
-	//api, _ = client.New(q.Client(), nil)
 	var subcfg subConfig
 	if sub != nil {
 		types.MustDecode(sub.Consensus["para"], &subcfg)
@@ -165,7 +163,6 @@ func (s *suiteParaClient) createBlock() {
 		if err != nil {
 			plog.Error("para test", "err", err.Error())
 		}
-		plog.Info("para test---------1", "last height", lastBlock.Height)
 		s.para.createBlock(lastBlock, nil, i, s.getParaMainBlock(i+1, lastBlock.BlockTime+1))
 	}
 }
@@ -252,7 +249,6 @@ func TestCalcCommitMsgTxs(t *testing.T) {
 func TestGetConsensusStatus(t *testing.T) {
 	para := new(client)
 	grpcClient := &typesmocks.Chain33Client{}
-	//grpcClient.On("GetFork", mock.Anything, &types.ReqKey{Key: []byte("ForkBlockHash")}).Return(&types.Int64{Data: 1}, errors.New("err")).Once()
 	para.grpcClient = grpcClient
 	commitCli := new(commitMsgClient)
 	commitCli.paraClient = para
@@ -289,10 +285,6 @@ func TestSendCommitMsg(t *testing.T) {
 	sendMsgCh := make(chan *types.Transaction, 1)
 	go commitCli.sendCommitMsg(sendMsgCh)
 
-	//reply := &types.Reply{
-	//	IsOk: true,
-	//	Msg:  types.Encode(status),
-	//}
 	grpcClient.On("SendTransaction", mock.Anything, mock.Anything).Return(nil, types.ErrNotFound).Twice()
 	tx := &types.Transaction{}
 

@@ -162,10 +162,6 @@ func createTestTxs(t *testing.T) (*types.BlockDetail, []*types.Transaction, []*t
 	txs = append(txs, txGroupBC...)
 	txs = append(txs, txD)
 
-	//for i, tx := range txs {
-	//	t.Log("tx exec name", "i", i, "name", string(tx.Execer))
-	//}
-
 	recpt5 := &types.ReceiptData{Ty: types.ExecOk}
 	recpt6 := &types.ReceiptData{Ty: types.ExecOk}
 
@@ -218,4 +214,16 @@ func TestAddMinerTx(t *testing.T) {
 	ret = checkTxInMainBlock(tx2, mainDetail)
 	assert.False(t, ret)
 
+}
+
+func TestGetBlockHashForkHeightOnMainChainExceptional(t *testing.T) {
+	para := new(client)
+	grpcClient := &typesmocks.Chain33Client{}
+	grpcClient.On("GetFork", mock.Anything, &types.ReqKey{Key: []byte("ForkBlockHash")}).Return(&types.Int64{Data: 2}, errors.New("err")).Once()
+	para.grpcClient = grpcClient
+	_, err := para.GetForkHeightOnMainChain("ForkBlockHash")
+	assert.NotNil(t, err)
+	grpcClient.On("GetFork", mock.Anything, &types.ReqKey{Key: []byte("ForkBlockHash")}).Return(&types.Int64{Data: 2}, nil).Once()
+	_, err = para.GetForkHeightOnMainChain("ForkBlockHash")
+	assert.NotNil(t, err)
 }
