@@ -140,6 +140,19 @@ func (s *suiteParaCommitMsg) createBlock() {
 	}
 }
 
+func (s *suiteParaCommitMsg) TestRun_CreaateBlock() {
+	s.createBlock()
+
+	s.testRunRmvBlock()
+
+	lastBlock, _ := s.para.RequestLastBlock()
+	if lastBlock.Height > 0 {
+		s.para.DelBlock(lastBlock, 1)
+
+	}
+
+}
+
 func (s *suiteParaCommitMsg) TestRun_1() {
 	s.createBlock()
 
@@ -150,6 +163,7 @@ func (s *suiteParaCommitMsg) TestRun_1() {
 		s.para.DelBlock(lastBlock, 1)
 
 	}
+	s.para.removeBlocks(lastBlock.Height)
 
 }
 
