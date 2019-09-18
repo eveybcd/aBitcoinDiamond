@@ -499,6 +499,10 @@ func (client *client) switchHashMatchedBlock(currSeq int64) (int64, []byte, erro
 	for height := lastBlock.Height; height > 0 && depth > 0; height-- {
 		block, err := client.GetBlockByHeight(height)
 		if err != nil {
+			err = client.removeBlocks(0)
+			if err != nil {
+				return currSeq, nil, nil
+			}
 			return -2, nil, err
 		}
 		//当前block结构已经有mainHash和MainHeight但是从blockchain获取的block还没有写入，以后如果获取到，可以替换从minerTx获取
