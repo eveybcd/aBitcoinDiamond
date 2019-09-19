@@ -420,6 +420,11 @@ func (client *Client) getNextRequiredDifficulty(block *types.Block, bits uint32)
 		return cfg.PowLimitBits, defaultModify, types.ErrBlockNotFound
 	}
 
+	_, mod, err := client.getNextTarget(block, block.Difficulty)
+	if mod == nil || err != nil {
+		return cfg.PowLimitBits, defaultModify, err
+	}
+
 	modify, err := client.getModify(block.Height+1-blocksPerRetarget, block.Height)
 	if err != nil {
 		return cfg.PowLimitBits, defaultModify, err
