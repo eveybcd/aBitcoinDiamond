@@ -240,6 +240,16 @@ func getPrivMap(privs []crypto.PrivKey) map[string]crypto.PrivKey {
 	return list
 }
 
+func (client *Client) syncFromGenesisBlock() (int64, []byte, error) {
+	lastSeq, lastBlock, err := client.getNextTarget()
+	if err != nil {
+		plog.Error("Parachain getLastBlockInfo fail", "err", err)
+		return -2, nil, err
+	}
+	plog.Info("syncFromGenesisBlock sync from height 0")
+	return lastSeq + 1, lastBlock.MainHash, nil
+}
+
 func (client *Client) getMinerTx(current *types.Block) (*ty.TicketAction, error) {
 	//检查第一个笔交易的execs, 以及执行状态
 	if len(current.Txs) == 0 {
@@ -319,12 +329,14 @@ func (client *Client) CheckBlock(parent *types.Block, current *types.BlockDetail
 	}
 	//check reward 的值是否正确
 	miner := ticketAction.GetMiner()
-	if miner.Reward != (cfg.CoinReward + calcTotalFee(current.Block)) {
-		return types.ErrCoinbaseReward
-	}
 	if miner.Bits != current.Block.Difficulty {
 		return types.ErrBlockHeaderDifficulty
 	}
+
+	if miner.Reward != (cfg.CoinReward + calcTotalFee(current.Block)) {
+		return types.ErrCoinbaseReward
+	}
+
 	//check modify:
 
 	//通过判断区块的难度Difficulty
@@ -348,19 +360,23 @@ func (client *Client) CheckBlock(parent *types.Block, current *types.BlockDetail
 			"cacl", printBInt(currentTarget), "current", printBInt(difficulty.CompactToBig(miner.Bits)))
 		return types.ErrCoinBaseTarget
 	}
-	if currentTarget.Cmp(target) != 0 {
-		tlog.Error("block error: calc tagget not the same to target",
-			"cacl", printBInt(currentTarget), "current", printBInt(target))
-		return types.ErrCoinBaseTarget
+
+	if current.Block.Size() > int(types.MaxBlockSize) {
+		return types.ErrBlockSize
 	}
+
 	if currentdiff.Cmp(currentTarget) > 0 {
 		tlog.Error("block error: diff not fit the tagget",
 			"current", printBInt(currentdiff), "taget", printBInt(target))
 		return types.ErrCoinBaseTarget
 	}
-	if current.Block.Size() > int(types.MaxBlockSize) {
-		return types.ErrBlockSize
+
+	if currentTarget.Cmp(target) != 0 {
+		tlog.Error("block error: calc tagget not the same to target",
+			"cacl", printBInt(currentTarget), "current", printBInt(target))
+		return types.ErrCoinBaseTarget
 	}
+
 	return nil
 }
 
@@ -508,16 +524,12 @@ func (client *Client) searchTargetTicket(parent, block *types.Block) (*ty.Ticket
 			tlog.Error("Client searchTargetTicket can't find private key", "MinerAddress", ticket.MinerAddress)
 			continue
 		}
-		privHash, err := genPrivHash(priv, ticketID)
+		_, err := genPrivHash(priv, ticketID)
 		if err != nil {
 			tlog.Error("Client searchTargetTicket genPrivHash ", "error", err)
 			continue
 		}
-		currentdiff := client.getCurrentTarget(block.BlockTime, ticket.TicketId, modify, privHash)
-		if currentdiff.Cmp(diff) >= 0 { //难度要大于前一个，注意数字越小难度越大
-			continue
-		}
-		tlog.Info("currentdiff", "hex", printBInt(currentdiff))
+
 		tlog.Info("FindBlock", "height------->", block.Height, "ntx", len(block.Txs))
 		return ticket, priv, diff, modify, ticketID, nil
 	}
