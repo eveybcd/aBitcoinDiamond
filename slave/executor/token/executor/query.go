@@ -91,3 +91,20 @@ func (t *token) Query_GetTokenHistory(in *types.ReqString) (types.Message, error
 	}
 	return &replys, nil
 }
+
+func (t *token) Query_GetPrice(in *types.ReqString) (types.Message, error) {
+	if in == nil {
+		return nil, types.ErrInvalidParam
+	}
+	ret, err := t.getTokenInfo(in.GetData())
+	if err != nil {
+		return nil, err
+	}
+	tokenInfo, ok := ret.(*tokenty.LocalToken)
+	if !ok {
+		return nil, types.ErrTypeAsset
+	}
+	return &types.TotalAmount{
+		Total: tokenInfo.Price,
+	}, nil
+}

@@ -5,9 +5,6 @@
 package para
 
 import (
-	"math/rand"
-	"testing"
-
 	"github.com/33cn/chain33/blockchain"
 	"github.com/33cn/chain33/common/log"
 	"github.com/33cn/chain33/executor"
@@ -16,6 +13,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
+	"math/rand"
 
 	//_ "github.com/aBitcoinDiamond/slave/executor/paracross"
 	pp "github.com/aBitcoinDiamond/slave/executor/paracross/executor"
@@ -179,11 +177,6 @@ func (s *suiteParaCommitMsg) testRunRmvBlock() {
 	plog.Info("para test testRunRmvBlock----------after", "last height", lastBlock.Height)
 	s.Equal(int64(1), lastBlock.Height)
 
-}
-
-func testRunSuiteParaCommitMsg(t *testing.T) {
-	log := new(suiteParaCommitMsg)
-	suite.Run(t, log)
 }
 
 func (s *suiteParaCommitMsg) TearDownSuite() {
