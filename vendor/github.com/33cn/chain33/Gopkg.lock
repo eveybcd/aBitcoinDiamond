@@ -91,7 +91,7 @@
 [[projects]]
   branch = "master"
   digest = "1:c0decf632843204d2b8781de7b26e7038584e2dcccc7e2f401e88ae85b1df2b7"
-  name = "github.com/btcsuite/btcd"
+  name = "github.com/aBitcoinDiamond"
   packages = ["btcec"]
   pruneopts = "UT"
   revision = "67e573d211ace594f1366b4ce9d39726c4b19bd0"
@@ -545,7 +545,7 @@
     "github.com/NebulousLabs/Sia/crypto",
     "github.com/NebulousLabs/Sia/modules",
     "github.com/XiaoMi/pegasus-go-client/pegasus",
-    "github.com/btcsuite/btcd/btcec",
+    "github.com/aBitcoinDiamond/btcec",
     "github.com/decred/base58",
     "github.com/dgraph-io/badger",
     "github.com/dgraph-io/badger/options",

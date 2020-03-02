@@ -11,6 +11,7 @@ import (
 	"sync/atomic"
 
 	"github.com/33cn/chain33/client"
+	"github.com/33cn/chain33/common"
 	log "github.com/33cn/chain33/common/log/log15"
 	"github.com/33cn/chain33/common/merkle"
 	"github.com/33cn/chain33/queue"

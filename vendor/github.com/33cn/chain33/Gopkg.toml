@@ -39,7 +39,7 @@
 
 [[constraint]]
   branch = "master"
-  name = "github.com/btcsuite/btcd"
+  name = "github.com/aBitcoinDiamond"
 
 [[constraint]]
   name = "github.com/decred/base58"
